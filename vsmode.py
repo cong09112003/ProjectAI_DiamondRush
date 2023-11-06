@@ -11,13 +11,13 @@ def undo():
     pass
 
 root = tk.Tk()
-root.title("Game Interface - 2 Players")
+root.title("VS MODE")
 
 style = ThemedStyle(root)
 style.set_theme("plastik")
 
 # Phần giao diện cho bên trái
-player1_frame = ttk.LabelFrame(root, text="Player 1", padding=(10, 10))
+player1_frame = ttk.LabelFrame(root, text="Agent 1", padding=(10, 10))
 player1_frame.grid(row=0, column=0, padx=10, pady=10)
 
 # Combobox chọn agent
@@ -51,7 +51,7 @@ step_label1 = ttk.Label(player1_frame, text="Step: 0")
 step_label1.grid(row=5, column=1, padx=10, pady=10)
 
 # Phần giao diện cho bên phải, tất cả đều tương tự ở trên
-player2_frame = ttk.LabelFrame(root, text="Player 2", padding=(10, 10))
+player2_frame = ttk.LabelFrame(root, text="Agent 2", padding=(10, 10))
 player2_frame.grid(row=0, column=1, padx=10, pady=10)
 
 player2_options = ttk.Combobox(player2_frame, values=["AI", "Human"])
