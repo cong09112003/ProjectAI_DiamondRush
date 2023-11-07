@@ -87,7 +87,6 @@ def moveRight():
     
 def moveUp():
     movePlayer(-1,0)
-    
 def moveDown():
     movePlayer(1,0)    
 
