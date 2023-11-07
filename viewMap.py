@@ -18,6 +18,7 @@ def initBoard():
     with open("map/game01.txt", 'r')as f:
         for line in f.read().splitlines(): 
             board.append(list(line))
+    # print(board)
             
             
             
@@ -26,59 +27,37 @@ def initTargets():
         for j in range(len(board[i])):
             if board[i][j]==TARGET:
                 targets.append((i,j))
+    print(targets)
 
-def isTargets(row,col):
-    for target in range(targets):
+def isTarget(row,col):
+    for target in targets:
         if target[0]==row and target[1]==col:
             return True
-        return False
+    return False
     
-def getPlayerPosition():
-    for i in range(len(board)):
-        for j in range(len(board[i])):
-            if board[i][j]==PLAYER:
-                return i,j
+
    
 def getScreenSize():
     j = 0
     for i in range(len(board)):
-        j=len(board[i]) if len(board[i]) > j else j
-    return j*BOX_SIZE,len(board) * BOX_SIZE        
+        j = len (board[i]) if len(board[i]) > j else j
+    return j*BOX_SIZE, len(board) * BOX_SIZE        
 
 def doMove(row,col,i,j):
     board[row+i][col+j]=PLAYER
-    if isTargets(row,col):
+    if isTarget(row,col):
         board[row][col]=TARGET
     else:
         board[row][col]=SPACE
-        
-def movePlayer(i,j):
-    row,col=getPlayerPosition()
-    m,n=i*2,j*2
-    # if  is_space
-    if board[row+i][col+j]==SPACE:
-        doMove(row,col,i,j)
-    # if is_target
-    elif board[row+i][col+j]==TARGET:
-        doMove(row,col,i,j)
-    # if is_box
-    elif board[row+i][col+j]==BOX:
-        if board[row+m][col+n]==SPACE:
-            board[row+m][col+n]==BOX
-            doMove(row,col,i,j)
-        elif board[row+m][col+n]==TARGET:
-            board[row+m][col+n]==BINGO
-            doMove(row,col,i,j)
-    #if is_bingo    
-    elif board[row+i][col+j]==BINGO:
-        if board[row+m][col+n]==SPACE:
-            board[row+m][col+n]==BOX
-            doMove(row,col,i,j)
-        elif board[row+m][col+n]==TARGET:
-            board[row+m][col+n]==BINGO
-            doMove(row,col,i,j)
-    else:
-        pass
+
+def getPlayerPosition():
+    for i in range(len(board)):
+        for j in range(len(board[i])):
+            if board[i][j]==PLAYER:
+                print(i,j)
+                return i,j
+           
+
 def moveLeft():
     movePlayer(0,-1)
     
@@ -87,9 +66,43 @@ def moveRight():
     
 def moveUp():
     movePlayer(-1,0)
+    
 def moveDown():
-    movePlayer(1,0)    
-
+    movePlayer(1,0)   
+     
+def movePlayer(i,j):
+    row, col = getPlayerPosition()
+    m = i*2 
+    n = j*2
+    # if  is_space
+    if board[row+i][col+j] == SPACE:
+        doMove(row,col,i,j)
+        
+    # if is_target
+    elif board[row+i][col+j] == TARGET:
+        doMove(row,col,i,j)
+        
+    # if is_box
+    elif board[row+i][col+j] == BOX:
+        if board[row+m][col+n] == SPACE:
+            board[row+m][col+n] = BOX
+            doMove(row,col,i,j)
+            
+        elif board[row+m][col+n]==TARGET:
+            board[row+m][col+n]=BINGO
+            doMove(row,col,i,j)
+    #if is_bingo    
+    elif board[row+i][col+j]==BINGO:
+        if board[row+m][col+n]==SPACE:
+            board[row+m][col+n]=BOX
+            doMove(row,col,i,j)
+            
+        elif board[row+m][col+n]==TARGET:
+            board[row+m][col+n]=BINGO
+            doMove(row,col,i,j)
+    #else is wall
+    else:
+        pass
 def drawBoard(screen):
     # load image
     img_wall=pygame.image.load('img/wall.png').convert()
@@ -106,7 +119,7 @@ def drawBoard(screen):
     
     pygame.display.update()
             
-           
+
 def main():
     initBoard()
     initTargets()
