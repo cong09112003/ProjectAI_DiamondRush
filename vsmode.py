@@ -1,81 +1,70 @@
 import tkinter as tk
-from tkinter import ttk
-from ttkthemes import ThemedStyle
+import customtkinter as ct
 
-# Function start game
-def start_game():
-    pass    
+ct.set_appearance_mode("System")
 
-# Function undo
-def undo():
-    pass
+app = ct.CTk()
+app.geometry("1280x720")
+app.title("VS mode")
 
-root = tk.Tk()
-root.title("VS MODE")
+# Agent 1
+#Frame để chứa các element cho agent 1
+agent1_frame = ct.CTkFrame(master=app, fg_color="gray")
+agent1_frame.pack(side="left", fill="both", expand=True, padx=20, pady=20)
 
-style = ThemedStyle(root)
-style.set_theme("plastik")
+#Combobox chọn agent (human hoặc AI)
+agent1_combobox = ct.CTkComboBox(master=agent1_frame, values=["AI", "Human"])
+agent1_combobox.place(relx=0.5, rely=0.03, anchor=tk.CENTER)
 
-# Phần giao diện cho bên trái
-player1_frame = ttk.LabelFrame(root, text="Agent 1", padding=(10, 10))
-player1_frame.grid(row=0, column=0, padx=10, pady=10)
+#Combobox chọn các thuật toán
+algo1_combobox = ct.CTkComboBox(master=agent1_frame, values=["BFS", "DFS"])
+algo1_combobox.place(relx=0.5, rely=0.1, anchor=tk.CENTER)
 
-# Combobox chọn agent
-player1_options = ttk.Combobox(player1_frame, values=["AI", "Human"])
-player1_options.set("AI")
-player1_options.grid(row=0, column=0, padx=10, pady=10)
+#Button start
+button1_start = ct.CTkButton(master=agent1_frame, text="Start")
+button1_start.place(relx=0.5, rely=0.17, anchor=tk.CENTER)
 
-# Combobox chọn thuật toán
-algorithm_options1 = ttk.Combobox(player1_frame, values=["Algorithm 1", "Algorithm 2"])
-algorithm_options1.set("Algorithm 1")
-algorithm_options1.grid(row=1, column=0, padx=10, pady=10)
+#Button undo
+button1_undo = ct.CTkButton(master=agent1_frame, text="Undo")
+button1_undo.place(relx=0.5, rely=0.24, anchor=tk.CENTER)
 
-# Button để chạy thuật toán
-start_button1 = ttk.Button(player1_frame, text="Start", command=start_game)
-start_button1.grid(row=2, column=0, padx=10, pady=10)
+#Canvas để hiện màn hình trò chơi
+canvas1 = ct.CTkCanvas(master=agent1_frame,width=720,height = 480)
+canvas1.place(relx=0.5, rely=0.6, anchor=tk.CENTER)
 
-# Button để quay lại bước trước đó
-undo_button1 = ttk.Button(player1_frame, text="Undo", command=undo)
-undo_button1.grid(row=3, column=0, padx=10, pady=10)
+#Label hiện thời gian giải trò chơi
+lb_time1 = ct.CTkLabel(master=agent1_frame,text="Time: 0", text_color="black",width=120,height=25,fg_color=("white", "gray75"),corner_radius=8)
+lb_time1.place(relx=0.25, rely=0.91)
 
-# Canvas để chứa màn hình game
-game_canvas1 = tk.Canvas(player1_frame, width=300, height=150, bg="white")
-game_canvas1.grid(row=4, column=0, padx=10, pady=10)
-
-# Thời gian chạy thuật toán
-time_label1 = ttk.Label(player1_frame, text="Time: 0")
-time_label1.grid(row=5, column=0, padx=10, pady=10)
-
-#Số bước chạy thuật toán
-step_label1 = ttk.Label(player1_frame, text="Step: 0")
-step_label1.grid(row=5, column=1, padx=10, pady=10)
-
-# Phần giao diện cho bên phải, tất cả đều tương tự ở trên
-player2_frame = ttk.LabelFrame(root, text="Agent 2", padding=(10, 10))
-player2_frame.grid(row=0, column=1, padx=10, pady=10)
-
-player2_options = ttk.Combobox(player2_frame, values=["AI", "Human"])
-player2_options.set("AI")
-player2_options.grid(row=0, column=0, padx=10, pady=10)
-
-algorithm_options2 = ttk.Combobox(player2_frame, values=["Algorithm 1", "Algorithm 2"])
-algorithm_options2.set("Algorithm 1")
-algorithm_options2.grid(row=1, column=0, padx=10, pady=10)
-
-start_button2 = ttk.Button(player2_frame, text="Start", command=start_game)
-start_button2.grid(row=2, column=0, padx=10, pady=10)
+#Label hiện số bước của thuật toán
+lb_step1 = ct.CTkLabel(master=agent1_frame,text="Step: 0", text_color="black",width=120,height=25,fg_color=("white", "gray75"),corner_radius=8)
+lb_step1.place(relx=0.55, rely=0.91)
 
 
-undo_button2 = ttk.Button(player2_frame, text="Undo", command=undo)
-undo_button2.grid(row=3, column=0, padx=10, pady=10)
+#Agent 2
+#Tương tự Agent 1
+agent2_frame = ct.CTkFrame(master=app, fg_color="gray")
+agent2_frame.pack(side="left", fill="both", expand=True, padx=20, pady=20)
 
-game_canvas2 = tk.Canvas(player2_frame, width=300, height=150, bg="white")
-game_canvas2.grid(row=4, column=0, padx=10, pady=10)
+agent2_combobox = ct.CTkComboBox(master=agent2_frame, values=["AI", "Human"])
+agent2_combobox.place(relx=0.5, rely=0.03, anchor=tk.CENTER)
 
-time_label2 = ttk.Label(player2_frame, text="Time: 0")
-time_label2.grid(row=5, column=0, padx=10, pady=10)
+algo2_combobox = ct.CTkComboBox(master=agent2_frame, values=["BFS", "DFS"])
+algo2_combobox.place(relx=0.5, rely=0.1, anchor=tk.CENTER)
 
-step_label2 = ttk.Label(player2_frame, text="Step: 0")
-step_label2.grid(row=5, column=1, padx=10, pady=10)
+button2_start = ct.CTkButton(master=agent2_frame, text="Start")
+button2_start.place(relx=0.5, rely=0.17, anchor=tk.CENTER)
 
-root.mainloop()
+button2_undo = ct.CTkButton(master=agent2_frame, text="Undo")
+button2_undo.place(relx=0.5, rely=0.24, anchor=tk.CENTER)
+
+canvas2 = ct.CTkCanvas(master=agent2_frame,width=720,height = 480)
+canvas2.place(relx=0.5, rely=0.6, anchor=tk.CENTER)
+
+lb_time2 = ct.CTkLabel(master=agent2_frame,text="Time: 0", text_color="black",width=120,height=25,fg_color=("white", "gray75"),corner_radius=8)
+lb_time2.place(relx=0.25, rely=0.91)
+
+lb_step2 = ct.CTkLabel(master=agent2_frame,text="Step: 0", text_color="black",width=120,height=25,fg_color=("white", "gray75"),corner_radius=8)
+lb_step2.place(relx=0.55, rely=0.91)
+
+app.mainloop()
