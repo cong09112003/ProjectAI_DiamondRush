@@ -38,7 +38,8 @@ def endMenu_game():
     global running
     print("End the game")
     running = False
-    
+def multiplePlay_game():
+    print("AI VS HUMAN")
 # Nut start game   
 start_time = None
 step_count = 0
@@ -82,17 +83,18 @@ def next_level():
     
 current_interface = "menu"
 #Button for Menu
-switch_button = Button(1100, 400, 140, 75, (255, 255, 255), "Player", switch_interface)
-startMenu_button = Button(1100, 300, 125, 75, (255, 255, 255), "Start", startMenu_game)
-endMenu_button = Button(1100, 500, 125, 75, (255, 255, 255), "Quit", endMenu_game)
+switch_button = Button(1100, 400, 150, 75, (255, 255, 255), "Single play", switch_interface)
+startMenu_button = Button(1100, 300, 150, 75, (255, 255, 255), "Start", startMenu_game)
+endMenu_button = Button(1100, 600, 150, 75, (255, 255, 255), "Quit", endMenu_game)
+multiplePlay_button = Button(1100, 500, 150, 75, (255, 255, 255), "Multiple play", multiplePlay_game)
 
 mode_button = Button(1100, 400, 125, 75, (255, 255, 255), "Mode", toggle_mode)
 
 #Button for Mode Player
-startPlayer_button = Button(1200, 200, 125, 75, (255, 255, 255), "StartGame", startPlayer_game)
-endPlayer_button = Button(1200, 300, 125, 75, (255, 255, 255), "QuitGame", endPlayer_game)
-next_button = Button(1200, 400, 125, 75, (255, 255, 255), "Next", next_level)
-undo_button = Button(1200, 500, 125, 75, (255, 255, 255), "Undo", undo)
+startPlayer_button = Button(1150, 150, 140, 75, (255, 255, 255), "StartGame", startPlayer_game)
+endPlayer_button = Button(1150, 250, 140, 75, (255, 255, 255), "QuitGame", endPlayer_game)
+next_button = Button(1250, 400, 125, 75, (255, 255, 255), "Next", next_level)
+undo_button = Button(1050, 400, 125, 75, (255, 255, 255), "Undo", undo)
 #label time
 font = pygame.font.Font(None, 36)
 #Map game
@@ -111,7 +113,7 @@ while running:
         startMenu_button.draw(screen)
         endMenu_button.draw(screen)
         switch_button.draw(screen)
-
+        multiplePlay_button.draw(screen)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -119,6 +121,7 @@ while running:
                 startMenu_button.handle_event(event)
                 endMenu_button.handle_event(event)
                 switch_button.handle_event(event)
+                multiplePlay_button.handle_event(event)
 
     else:
         screen.blit(backgroundGame, (0, 0))
