@@ -3,6 +3,7 @@ import sys
 import os
 from tkinter import messagebox
 from pygame_widgets.button import Button
+from pygame_widgets.combobox import ComboBox
 import pygame_widgets
 BOX_SIZE = 36
 PLAYER = "@"
@@ -131,20 +132,46 @@ class SokobanGame:
                 surface.blit(images[self.board[i][j]], (j * BOX_SIZE, i * BOX_SIZE))
 
 def main():
+    #Cưả sổ chính
     game = SokobanGame("map/game01.txt")
     pygame.init()
     pygame.display.init()
     pygame.display.set_caption("Sokoban")
-    window_size = (930, 400)
-
+    window_size = (1000, 450)
     screen = pygame.display.set_mode(window_size)
-    screen.fill((0, 0, 0))
+    screen.fill((41,41,41))
 
+    #Game surface hiện trò chơi
     game_surface_size = (720, 400)
     game_surface = pygame.Surface(game_surface_size)
+    game_surface.fill((41,41,41))
+    
+    #Label time và step 
+    font = pygame.font.Font(None, 36)
+    steps_label = font.render("Steps: ", True, (255, 255, 255))
+    time_label = font.render("Time: 0.0s", True, (255, 255, 255))
+   
+    #Button trong game
+    button_start = Button(screen,  815,  50,  100,  40, text='Start',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
+    
+    button_bfs = Button(screen,  750,  100,  100,  40, text='BFS',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
+    button_dfs = Button(screen,  880,  100,  100,  40, text='DFS',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
+    button_ucs = Button(screen,  750,  150,  100,  40, text='UCS',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
+    button_greedy = Button(screen,  880,  150,  100,  40, text='Greedy',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
+    button_astar = Button(screen,  750,  200,  100,  40, text='A*',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
+    button_bestfs = Button(screen,  880,  200,  100,  40, text='Best FS',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
+    button_nextlevel = Button(screen,  880,  350,  100,  40, text='Next',  fontSize=34,  margin=20, 
+                               inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
+    button_previouslevel = Button(screen,  750,  350,  100,  40, text='Previous',  fontSize=34,  margin=20,  
+                                  inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
 
-    button_BFS = Button(screen,  820,  100,  100,  40, text='BFS',  fontSize=40,  margin=20,  inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
-    button_Greddy = Button(screen,  820,  50,  100,  40, text='Greedy',  fontSize=40,  margin=20,  inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=greedy )
     while True:
         events = pygame.event.get()
         for event in events:
@@ -166,16 +193,19 @@ def main():
                 pygame.quit()
                 sys.exit()
         game.draw_board(game_surface)
+        steps_label = font.render(f"Steps: {len(game.move_history)}", True, (255, 255, 255))
+        time_label = font.render(f"Time: 0s", True, (255, 255, 255))
+
         screen.blit(game_surface, (0, 0))
+        screen.blit(steps_label, (80, game_surface.get_height() + 10))
+        screen.blit(time_label, (360, game_surface.get_height() + 10))
+
         pygame.display.flip()
         pygame_widgets.update(events)
         pygame.display.update()
 
 def bfs():
     messagebox.showinfo("Hello", "BFS solve!")
-
-def greedy():
-    messagebox.showinfo("Hello", "Greedy solve!")
 
 if __name__ == "__main__":
     main()
