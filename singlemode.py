@@ -1,0 +1,211 @@
+import pygame
+import sys
+import os
+from tkinter import messagebox
+from pygame_widgets.button import Button
+from pygame_widgets.combobox import ComboBox
+import pygame_widgets
+BOX_SIZE = 36
+PLAYER = "@"
+TARGET = "."
+SPACE = " "
+BOX = "$"
+BINGO = "*"
+WALL = "#"
+  
+class SokobanGame:
+    def __init__(self, map_file):
+        self.board = []
+        self.targets = []
+        self.move_history = []
+        pygame.init()  
+        pygame.font.init()  
+        self.load_map(map_file)
+        self.button_font = pygame.font.Font(None, 36)
+
+    def load_map(self, map_file):
+        with open(map_file, 'r') as f:
+            for line in f.read().splitlines():
+                self.board.append(list(line))
+        self.init_targets()
+
+    def init_targets(self):
+        for i in range(len(self.board)):
+            for j in range(len(self.board[i])):
+                if self.board[i][j] == TARGET:
+                    self.targets.append((i, j))
+
+    def is_target(self, row, col):
+        for target in self.targets:
+            if target[0] == row and target[1] == col:
+                return True
+        return False
+
+    def get_screen_size(self):
+        j = 0
+        for i in range(len(self.board)):
+            j = len(self.board[i]) if len(self.board[i]) > j else j
+        return j * BOX_SIZE, len(self.board) * BOX_SIZE
+
+    def do_move(self, row, col, i, j):
+        self.move_history.append((row, col, i, j))
+        self.board[row + i][col + j] = PLAYER
+        if self.is_target(row, col):
+            self.board[row][col] = TARGET
+        else:
+            self.board[row][col] = SPACE
+
+    def get_player_position(self):
+        for i in range(len(self.board)):
+            for j in range(len(self.board[i])):
+                if self.board[i][j] == PLAYER:
+                    return i, j
+
+    def move_left(self):
+        self.move_player(0, -1)
+
+    def move_right(self):
+        self.move_player(0, 1)
+
+    def move_up(self):
+        self.move_player(-1, 0)
+
+    def move_down(self):
+        self.move_player(1, 0)
+
+    def move_player(self, i, j):
+        row, col = self.get_player_position()
+        m, n = i * 2, j * 2
+
+        if self.board[row + i][col + j] == SPACE:
+            self.do_move(row, col, i, j)
+
+        elif self.board[row + i][col + j] == TARGET:
+            self.do_move(row, col, i, j)
+
+        elif self.board[row + i][col + j] == BOX:
+            if self.board[row + m][col + n] == SPACE:
+                self.board[row + m][col + n] = BOX
+                self.do_move(row, col, i, j)
+
+            elif self.board[row + m][col + n] == TARGET:
+                self.board[row + m][col + n] = BINGO
+                self.do_move(row, col, i, j)
+
+        elif self.board[row + i][col + j] == BINGO:
+            if self.board[row + m][col + n] == SPACE:
+                self.board[row + m][col + n] = BOX
+                self.do_move(row, col, i, j)
+
+            elif self.board[row + m][col + n] == TARGET:
+                self.board[row + m][col + n] = BINGO
+                self.do_move(row, col, i, j)
+
+    def undo_move(self):
+        if self.move_history:
+            row, col, i, j = self.move_history.pop()
+            self.board[row][col] = PLAYER
+            if self.is_target(row, col):
+                self.board[row + i][col + j] = TARGET
+            else:
+                self.board[row + i][col + j] = SPACE
+
+    def load_map_from_file(self, map_file):
+        self.board = []
+        self.targets = []
+        self.move_history = []
+        self.load_map(map_file)
+        self.init_targets()
+
+    
+    def draw_board(self, surface):
+        img_wall = pygame.image.load('img/wall.png').convert()
+        img_box = pygame.image.load('img/box.png').convert()
+        img_player = pygame.image.load('img/player.png').convert()
+        img_target = pygame.image.load('img/target.png').convert()
+        img_bingo = pygame.image.load('img/bingo.png').convert()
+        img_space = pygame.image.load('img/space.png').convert()
+        images = {WALL: img_wall, SPACE: img_space, BINGO: img_bingo,
+                  TARGET: img_target, PLAYER: img_player, BOX: img_box}
+        for i in range(len(self.board)):
+            for j in range(len(self.board[i])):
+                surface.blit(images[self.board[i][j]], (j * BOX_SIZE, i * BOX_SIZE))
+
+def main():
+    #Cưả sổ chính
+    game = SokobanGame("map/game01.txt")
+    pygame.init()
+    pygame.display.init()
+    pygame.display.set_caption("Sokoban")
+    window_size = (1000, 450)
+    screen = pygame.display.set_mode(window_size)
+    screen.fill((41,41,41))
+
+    #Game surface hiện trò chơi
+    game_surface_size = (720, 400)
+    game_surface = pygame.Surface(game_surface_size)
+    game_surface.fill((41,41,41))
+    
+    #Label time và step 
+    font = pygame.font.Font(None, 36)
+    steps_label = font.render("Steps: ", True, (255, 255, 255))
+    time_label = font.render("Time: 0.0s", True, (255, 255, 255))
+   
+    #Button trong game
+    button_start = Button(screen,  815,  50,  100,  40, text='Start',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
+    
+    button_bfs = Button(screen,  750,  100,  100,  40, text='BFS',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
+    button_dfs = Button(screen,  880,  100,  100,  40, text='DFS',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
+    button_ucs = Button(screen,  750,  150,  100,  40, text='UCS',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
+    button_greedy = Button(screen,  880,  150,  100,  40, text='Greedy',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
+    button_astar = Button(screen,  750,  200,  100,  40, text='A*',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
+    button_bestfs = Button(screen,  880,  200,  100,  40, text='Best FS',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
+    button_nextlevel = Button(screen,  880,  350,  100,  40, text='Next',  fontSize=34,  margin=20, 
+                               inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
+    button_previouslevel = Button(screen,  750,  350,  100,  40, text='Previous',  fontSize=34,  margin=20,  
+                                  inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
+
+    while True:
+        events = pygame.event.get()
+        for event in events:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    game.move_left()
+                elif event.key == pygame.K_RIGHT:
+                    game.move_right()
+                elif event.key == pygame.K_UP:
+                    game.move_up()
+                elif event.key == pygame.K_DOWN:
+                    game.move_down()
+                elif event.key == pygame.K_z and pygame.key.get_mods() & pygame.KMOD_CTRL:
+                    game.undo_move()
+                elif event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    sys.exit()
+            elif event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+        game.draw_board(game_surface)
+        steps_label = font.render(f"Steps: {len(game.move_history)}", True, (255, 255, 255))
+        time_label = font.render(f"Time: 0s", True, (255, 255, 255))
+
+        screen.blit(game_surface, (0, 0))
+        screen.blit(steps_label, (80, game_surface.get_height() + 10))
+        screen.blit(time_label, (360, game_surface.get_height() + 10))
+
+        pygame.display.flip()
+        pygame_widgets.update(events)
+        pygame.display.update()
+
+def bfs():
+    messagebox.showinfo("Hello", "BFS solve!")
+
+if __name__ == "__main__":
+    main()
