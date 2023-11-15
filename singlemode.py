@@ -5,6 +5,7 @@ from tkinter import messagebox
 from pygame_widgets.button import Button
 from pygame_widgets.combobox import ComboBox
 import pygame_widgets
+import subprocess
 BOX_SIZE = 36
 PLAYER = "@"
 TARGET = "."
@@ -18,10 +19,14 @@ class SokobanGame:
         self.board = []
         self.targets = []
         self.move_history = []
+        self.aiStep = []
+        self.listMappath = ["map/game01.txt","map/game02.txt","map/game03.txt"]
+        self.curMappath = map_file
         pygame.init()  
         pygame.font.init()  
         self.load_map(map_file)
         self.button_font = pygame.font.Font(None, 36)
+        self.step= len(self.move_history)
 
     def load_map(self, map_file):
         with open(map_file, 'r') as f:
@@ -54,6 +59,7 @@ class SokobanGame:
             self.board[row][col] = TARGET
         else:
             self.board[row][col] = SPACE
+        self.step = len(self.move_history)
 
     def get_player_position(self):
         for i in range(len(self.board)):
@@ -101,15 +107,6 @@ class SokobanGame:
                 self.board[row + m][col + n] = BINGO
                 self.do_move(row, col, i, j)
 
-    def undo_move(self):
-        if self.move_history:
-            row, col, i, j = self.move_history.pop()
-            self.board[row][col] = PLAYER
-            if self.is_target(row, col):
-                self.board[row + i][col + j] = TARGET
-            else:
-                self.board[row + i][col + j] = SPACE
-
     def load_map_from_file(self, map_file):
         self.board = []
         self.targets = []
@@ -130,7 +127,31 @@ class SokobanGame:
         for i in range(len(self.board)):
             for j in range(len(self.board[i])):
                 surface.blit(images[self.board[i][j]], (j * BOX_SIZE, i * BOX_SIZE))
+    def reset(self):
+        self.board = []  
+        self.targets = []  
+        self.move_history = []  
+        self.load_map_from_file(self.curMappath)
+        self.init_targets()
+        self.step = 0
+        font = pygame.font.Font(None, 36)
+        steps_label = font.render(f"Steps: {self.step}", True, (255, 255, 255))
+        time_label = font.render(f"Time: 0s", True, (255, 255, 255))
+        return steps_label, time_label
 
+    def load_next_map(self,gamesur):
+        gamesur.fill((41,41,41))
+        index = self.listMappath.index(self.curMappath)
+        if index < len(self.listMappath) - 1:
+            self.curMappath = self.listMappath[index + 1]
+            self.load_map_from_file(self.curMappath)
+
+    def load_previous_map(self,gamesur):
+        gamesur.fill((41,41,41))
+        index = self.listMappath.index(self.curMappath)
+        if index > 0:
+            self.curMappath = self.listMappath[index - 1]
+            self.load_map_from_file(self.curMappath)
 def main():
     #Cưả sổ chính
     game = SokobanGame("map/game01.txt")
@@ -145,15 +166,11 @@ def main():
     game_surface_size = (720, 400)
     game_surface = pygame.Surface(game_surface_size)
     game_surface.fill((41,41,41))
-    
-    #Label time và step 
+
     font = pygame.font.Font(None, 36)
-    steps_label = font.render("Steps: ", True, (255, 255, 255))
-    time_label = font.render("Time: 0.0s", True, (255, 255, 255))
-   
     #Button trong game
-    button_start = Button(screen,  815,  50,  100,  40, text='Start',  fontSize=34,  margin=20, 
-                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
+    button_reset = Button(screen,  815,  50,  100,  40, text='Reset',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: game.reset() )
     
     button_bfs = Button(screen,  750,  100,  100,  40, text='BFS',  fontSize=34,  margin=20, 
                           inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
@@ -168,9 +185,11 @@ def main():
     button_bestfs = Button(screen,  880,  200,  100,  40, text='Best FS',  fontSize=34,  margin=20, 
                           inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
     button_nextlevel = Button(screen,  880,  350,  100,  40, text='Next',  fontSize=34,  margin=20, 
-                               inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
+                               inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: game.load_next_map(game_surface) )
     button_previouslevel = Button(screen,  750,  350,  100,  40, text='Previous',  fontSize=34,  margin=20,  
-                                  inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
+                                  inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: game.load_previous_map(game_surface) )
+    button_Home = Button(screen,  815,  300,  100,  40, text='Home',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: home() )
 
     while True:
         events = pygame.event.get()
@@ -184,8 +203,6 @@ def main():
                     game.move_up()
                 elif event.key == pygame.K_DOWN:
                     game.move_down()
-                elif event.key == pygame.K_z and pygame.key.get_mods() & pygame.KMOD_CTRL:
-                    game.undo_move()
                 elif event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     sys.exit()
@@ -193,12 +210,13 @@ def main():
                 pygame.quit()
                 sys.exit()
         game.draw_board(game_surface)
-        steps_label = font.render(f"Steps: {len(game.move_history)}", True, (255, 255, 255))
+        screen.fill((41, 41, 41), (0, game_surface.get_height(), window_size[0], 50))
+        steps_label = font.render(f"Steps: {game.step}", True, (255, 255, 255))
         time_label = font.render(f"Time: 0s", True, (255, 255, 255))
 
-        screen.blit(game_surface, (0, 0))
         screen.blit(steps_label, (80, game_surface.get_height() + 10))
         screen.blit(time_label, (360, game_surface.get_height() + 10))
+        screen.blit(game_surface, (0, 0))
 
         pygame.display.flip()
         pygame_widgets.update(events)
@@ -206,6 +224,11 @@ def main():
 
 def bfs():
     messagebox.showinfo("Hello", "BFS solve!")
-
+def home():
+    try:
+        subprocess.Popen(["python", "menuSokoban.py"])
+        sys.exit()
+    except Exception as e:
+        print(f"Error opening Menu.py: {e}")
 if __name__ == "__main__":
     main()
