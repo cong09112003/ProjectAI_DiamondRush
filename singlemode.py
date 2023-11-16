@@ -6,6 +6,8 @@ from pygame_widgets.button import Button
 from pygame_widgets.combobox import ComboBox
 import pygame_widgets
 import subprocess
+import DFS
+import time
 BOX_SIZE = 36
 PLAYER = "@"
 TARGET = "."
@@ -13,7 +15,7 @@ SPACE = " "
 BOX = "$"
 BINGO = "*"
 WALL = "#"
-
+FPS=30
 window_size = (1000, 600)
   
 class SokobanGame:
@@ -23,6 +25,7 @@ class SokobanGame:
         self.move_history = []
         self.aiStep = []
         self.playerStep=[]
+        self.clock=pygame.time.Clock()
         self.listMappath = ["map/game01.txt","map/game02.txt","map/game03.txt"]
         self.curMappath = map_file
         self.DeadLocks=[]
@@ -197,6 +200,29 @@ class SokobanGame:
     def printStep(self):
         print (f"AI Step:{self.aiStep}")
         print (f"Player step: {self.playerStep}")
+    def solve_DFS(self,gamsurface):
+        dfs=DFS.DFS(self.curMappath,self.aiStep)
+        self.aiStep=dfs.solveDFS()
+        for i in (self.aiStep):
+            if i == 'L': 
+                self.move_left()
+            if i == 'R':
+                self.move_right()
+            if i == 'U':
+                self.move_up()
+            if i == 'D':
+                self.move_down()
+            self.draw_board(pygame.display.get_surface())
+            pygame.display.flip()
+            pygame.time.delay(250)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+
+        self.draw_board(pygame.display.get_surface())
+        pygame.display.flip()
+            
 def main():
     #Cưả sổ chính
     game = SokobanGame("map/game01.txt")
@@ -220,7 +246,7 @@ def main():
     button_bfs = Button(screen,  750,  100,  100,  40, text='BFS',  fontSize=34,  margin=20, 
                           inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
     button_dfs = Button(screen,  880,  100,  100,  40, text='DFS',  fontSize=34,  margin=20, 
-                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda:game.solve_DFS(game_surface) )
     button_ucs = Button(screen,  750,  150,  100,  40, text='UCS',  fontSize=34,  margin=20, 
                           inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
     button_greedy = Button(screen,  880,  150,  100,  40, text='Greedy',  fontSize=34,  margin=20, 
@@ -273,6 +299,7 @@ def main():
         pygame.display.flip()
         pygame_widgets.update(events)
         pygame.display.update()
+        game.clock.tick(FPS)
     
 def bfs():
     messagebox.showinfo("Hello", "BFS solve!")
