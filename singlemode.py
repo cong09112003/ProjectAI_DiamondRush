@@ -6,7 +6,8 @@ from pygame_widgets.button import Button
 from pygame_widgets.combobox import ComboBox
 import pygame_widgets
 import subprocess
-from queue import PriorityQueue
+import DFS
+import time
 BOX_SIZE = 36
 PLAYER = "@"
 TARGET = "."
@@ -14,37 +15,72 @@ SPACE = " "
 BOX = "$"
 BINGO = "*"
 WALL = "#"
+FPS=30
+window_size = (1000, 600)
+  
 class SokobanGame:
     def __init__(self, map_file):
         self.board = []
         self.targets = []
         self.move_history = []
         self.aiStep = []
+        self.playerStep=[]
+        self.clock=pygame.time.Clock()
         self.listMappath = ["map/game01.txt","map/game02.txt","map/game03.txt"]
         self.curMappath = map_file
+        self.DeadLocks=[]
         pygame.init()  
         pygame.font.init()  
         self.load_map(map_file)
         self.button_font = pygame.font.Font(None, 36)
         self.step= len(self.move_history)
-
+        self.state="..."
+        if self.is_success==True:
+            self.state="Win"
     def load_map(self, map_file):
         with open(map_file, 'r') as f:
             for line in f.read().splitlines():
                 self.board.append(list(line))
         self.init_targets()
-
+        print(f"targets:{self.targets}")
+        self.init_deadblock()
+        print(f"dealocks:{self.DeadLocks}")
+    def is_success(self):
+        for i in range(len(self.board)):
+            for j in range(len(self.board[i])):
+                if self.board[i][j] == TARGET:
+                    return False
+        return True
+    # i!=0 and j!=0 and i!=len(self.board[0])-1 and j!=len(self.board[1])-1 and
+    # ((self.board[i-1][j]==WALL and self.board[i][j-1]==WALL) or
+    # (self.board[i-1][j]==WALL and self.board[i][j+1]==WALL) or
+    # (self.board[i+1][j]==WALL and self.board[i][j-1]==WALL) or
+    # (self.board[i+1][j]==WALL and self.board[i][j+1]==WALL))
+    def init_deadblock(self):
+        for i in range(len(self.board)):
+            for j in range(len(self.board[i])):
+                if  self.board[i][j] == SPACE or self.board[i][j] == PLAYER :
+                    # print(i,j)
+                    if i-1 >= 0 and j-1 >= 0 and i+1 <= len(self.board) and j+1 <= len(self.board[0]):
+                        if self.board[i-1][j]==WALL and self.board[i][j-1]==WALL:
+                            self.DeadLocks.append((i,j))  
+                        elif self.board[i-1][j]==WALL and self.board[i][j+1]==WALL:
+                            self.DeadLocks.append((i,j))  
+                        elif self.board[i+1][j]==WALL and self.board[i][j-1]==WALL:
+                            self.DeadLocks.append((i,j))
+                        elif self.board[i+1][j]==WALL and self.board[i][j+1]==WALL:
+                            self.DeadLocks.append((i,j))                     
+    def is_deadblock(self,row,col):
+        for dealbock in self.DeadLocks:
+            if dealbock[0] == row and dealbock[1] == col:
+                return True
+        return False
     def init_targets(self):
         for i in range(len(self.board)):
             for j in range(len(self.board[i])):
                 if self.board[i][j] == TARGET:
                     self.targets.append((i, j))
 
-    def all_boxes_on_targets(self):
-        for target in self.targets:
-            if self.board[target[0]][target[1]] != BINGO:
-                return False
-        return True
     def is_target(self, row, col):
         for target in self.targets:
             if target[0] == row and target[1] == col:
@@ -74,15 +110,19 @@ class SokobanGame:
 
     def move_left(self):
         self.move_player(0, -1)
+        self.playerStep.append('L')
 
     def move_right(self):
         self.move_player(0, 1)
+        self.playerStep.append('R')
 
     def move_up(self):
         self.move_player(-1, 0)
+        self.playerStep.append('U')
 
     def move_down(self):
         self.move_player(1, 0)
+        self.playerStep.append('D')
 
     def move_player(self, i, j):
         row, col = self.get_player_position()
@@ -108,16 +148,17 @@ class SokobanGame:
                 self.board[row + m][col + n] = BOX
                 self.do_move(row, col, i, j)
 
-            elif self.board[row + m][col + n] == TARGET: 
+            elif self.board[row + m][col + n] == TARGET:
                 self.board[row + m][col + n] = BINGO
                 self.do_move(row, col, i, j)
-    
+
     def load_map_from_file(self, map_file):
         self.board = []
         self.targets = []
         self.move_history = []
         self.load_map(map_file)
         self.init_targets()
+
     
     def draw_board(self, surface):
         img_wall = pygame.image.load('img/wall.png').convert()
@@ -156,59 +197,39 @@ class SokobanGame:
         if index > 0:
             self.curMappath = self.listMappath[index - 1]
             self.load_map_from_file(self.curMappath)
+    def printStep(self):
+        print (f"AI Step:{self.aiStep}")
+        print (f"Player step: {self.playerStep}")
+    def solve_DFS(self,gamsurface):
+        dfs=DFS.DFS(self.curMappath,self.aiStep)
+        self.aiStep=dfs.solveDFS()
+        for i in (self.aiStep):
+            if i == 'L': 
+                self.move_left()
+            if i == 'R':
+                self.move_right()
+            if i == 'U':
+                self.move_up()
+            if i == 'D':
+                self.move_down()
+            self.draw_board(pygame.display.get_surface())
+            pygame.display.flip()
+            pygame.time.delay(250)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
 
-    def get_neighbors(self, state):
-        row, col = state
-        neighbors = []
-
-        for i, j in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-            if self.is_valid_move(row + i, col + j):
-                neighbors.append((row + i, col + j))
-
-        return neighbors
-
-    def is_valid_move(self, row, col):
-        if row < 0 or row >= len(self.board) or col < 0 or col >= len(self.board[0]):
-            return False
-
-        if self.board[row][col] == WALL:
-            return False
-
-        return True
-
-    def cost(self, current, next_state):
-        return 1
-
-    def ucs(self):
-        start_state = self.get_player_position()
-        frontier = PriorityQueue()
-        frontier.put((0, start_state))  
-        came_from = {start_state: None}
-        cost_so_far = {start_state: 0}
-
-        while not frontier.empty():
-            current = frontier.get()[1]
-
-            if self.is_target(*current):
-                break
-
-            for next_state in self.get_neighbors(current):
-                new_cost = cost_so_far[current] + self.cost(current, next_state)
-                if next_state not in cost_so_far or new_cost < cost_so_far[next_state]:
-                    cost_so_far[next_state] = new_cost
-                    priority = new_cost
-                    frontier.put((priority, next_state))
-                    came_from[next_state] = current
-        print(came_from)
-        return came_from, cost_so_far
-
+        self.draw_board(pygame.display.get_surface())
+        pygame.display.flip()
+            
 def main():
     #Cưả sổ chính
     game = SokobanGame("map/game01.txt")
     pygame.init()
     pygame.display.init()
     pygame.display.set_caption("Sokoban")
-    window_size = (1000, 450)
+    
     screen = pygame.display.set_mode(window_size)
     screen.fill((41,41,41))
 
@@ -218,23 +239,22 @@ def main():
     game_surface.fill((41,41,41))
 
     font = pygame.font.Font(None, 36)
-
     #Button trong game
     button_reset = Button(screen,  815,  50,  100,  40, text='Reset',  fontSize=34,  margin=20, 
                           inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: game.reset() )
     
     button_bfs = Button(screen,  750,  100,  100,  40, text='BFS',  fontSize=34,  margin=20, 
-                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=ok )
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
     button_dfs = Button(screen,  880,  100,  100,  40, text='DFS',  fontSize=34,  margin=20, 
-                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=ok )
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda:game.solve_DFS(game_surface) )
     button_ucs = Button(screen,  750,  150,  100,  40, text='UCS',  fontSize=34,  margin=20, 
-                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda:game.ucs() )
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
     button_greedy = Button(screen,  880,  150,  100,  40, text='Greedy',  fontSize=34,  margin=20, 
-                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=ok )
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
     button_astar = Button(screen,  750,  200,  100,  40, text='A*',  fontSize=34,  margin=20, 
-                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=ok )
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
     button_bestfs = Button(screen,  880,  200,  100,  40, text='Best FS',  fontSize=34,  margin=20, 
-                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=ok )
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=bfs )
     button_nextlevel = Button(screen,  880,  350,  100,  40, text='Next',  fontSize=34,  margin=20, 
                                inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: game.load_next_map(game_surface) )
     button_previouslevel = Button(screen,  750,  350,  100,  40, text='Previous',  fontSize=34,  margin=20,  
@@ -260,20 +280,29 @@ def main():
             elif event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+        if game.is_success(): 
+            game.state = 'win'
+            game.printStep()
+            
         game.draw_board(game_surface)
         screen.fill((41, 41, 41), (0, game_surface.get_height(), window_size[0], 50))
         steps_label = font.render(f"Steps: {game.step}", True, (255, 255, 255))
         time_label = font.render(f"Time: 0s", True, (255, 255, 255))
 
+        
+        state_label=font.render(f"State: {game.state}", True, (255, 255, 255))
         screen.blit(steps_label, (80, game_surface.get_height() + 10))
         screen.blit(time_label, (360, game_surface.get_height() + 10))
+        screen.blit(state_label, (500, game_surface.get_height() + 10))
         screen.blit(game_surface, (0, 0))
 
         pygame.display.flip()
         pygame_widgets.update(events)
         pygame.display.update()
-def ok():
-    messagebox.showinfo("Hello", "message")
+        game.clock.tick(FPS)
+    
+def bfs():
+    messagebox.showinfo("Hello", "BFS solve!")
 def home():
     try:
         subprocess.Popen(["python", "menuSokoban.py"])
@@ -282,3 +311,4 @@ def home():
         print(f"Error opening Menu.py: {e}")
 if __name__ == "__main__":
     main()
+    
