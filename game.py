@@ -43,6 +43,7 @@ class Game:
         self.curMappath = "map/game01.txt"
         self.state="..."
         self.step = 0    
+        self.time = 0
     
     def load_next_map(self,gamesur):
         gamesur.fill((41,41,41))
@@ -241,7 +242,42 @@ class Game:
         # Clear other attributes related to the game state
         self.heuristic = 0
         self.pathSol = ""
+        self.step = 0
+        self.state = "..."
+        self.time = 0  
         self.stack = []
+
+def load_next_map(game, gamesur):
+    game.heuristic = 0
+    game.heuristic = 0
+    game.pathSol = ""
+    game.step = 0
+    game.state = "..."
+    game.time = 0
+    game.stack = []
+    gamesur.fill((41, 41, 41))
+    index = game.listMappath.index(game.curMappath)
+    if index < len(game.listMappath) - 1:
+        game.curMappath = game.listMappath[index + 1]
+        game.matrix = map_open(game.curMappath)
+        print_game(game.get_matrix(), gamesur)
+
+def load_previous_map(game, gamesur):
+    game.heuristic = 0
+    game.heuristic = 0
+    game.pathSol = ""
+    game.step = 0
+    game.state = "..."
+    game.time = 0
+    game.stack = []
+    gamesur.fill((41, 41, 41))
+    index = game.listMappath.index(game.curMappath)
+    if index > 0:
+        game.curMappath = game.listMappath[index - 1]
+        game.matrix = map_open(game.curMappath)
+        print_game(game.get_matrix(), gamesur)
+
+        
 
 def validMove(state):
     x = 0
@@ -443,6 +479,7 @@ def AstarSolution(game):
                 print("Number of visited node:",node_generated)
                 print("Solution:",newState.pathSol)
                 game.step = len(newState.pathSol)
+                game.time = round(end -start,2)
                 return newState.pathSol
 
             if (newState.get_matrix() not in stateExplored) and (not is_deadlock(newState)):
@@ -495,6 +532,7 @@ def UCSsolution(game):
                 print("Number of visited node:", node_generated)
                 print("Solution:", newState.pathSol)
                 game.step = len(newState.pathSol)
+                game.time = round(end -start,2)
                 return newState.pathSol
                 
 
@@ -527,9 +565,9 @@ def a(game):
         print_game(game.get_matrix(),pygame.display.get_surface())
         pygame.display.flip()
         i+=1
-        time.sleep(0.1)    
+        time.sleep(0.01)    
 
-def ucs(game,gamesur):
+def ucs(game):
     i = 0
     sol = UCSsolution(game)
     for move in sol:
@@ -537,9 +575,9 @@ def ucs(game,gamesur):
         print_game(game.get_matrix(),pygame.display.get_surface())
         pygame.display.flip()
         i+=1
-        time.sleep(0.1)    
+        time.sleep(0.01)    
 def main():
-    game = Game(map_open('map/game03.txt'))
+    game = Game(map_open('map/game02.txt'))
     pygame.init()
     pygame.display.init()
     pygame.display.set_caption("Sokoban")
@@ -565,7 +603,7 @@ def main():
     button_dfs = Button(screen,  880,  100,  100,  40, text='DFS',  fontSize=34,  margin=20, 
                           inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=ok )
     button_ucs = Button(screen,  750,  150,  100,  40, text='UCS',  fontSize=34,  margin=20, 
-                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: ucs(game,game_surface) )
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: ucs(game) )
     button_greedy = Button(screen,  880,  150,  100,  40, text='Greedy',  fontSize=34,  margin=20, 
                           inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=ok )
     button_astar = Button(screen,  750,  200,  100,  40, text='A*',  fontSize=34,  margin=20, 
@@ -573,9 +611,9 @@ def main():
     button_bestfs = Button(screen,  880,  200,  100,  40, text='Best FS',  fontSize=34,  margin=20, 
                           inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=ok )
     button_nextlevel = Button(screen,  880,  350,  100,  40, text='Next',  fontSize=34,  margin=20, 
-                               inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: game.load_next_map(game_surface) )
+                               inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: load_next_map(game,game_surface) )
     button_previouslevel = Button(screen,  750,  350,  100,  40, text='Previous',  fontSize=34,  margin=20,  
-                                  inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: game.load_previous_map(game_surface) )
+                                  inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: load_previous_map(game,game_surface) )
     button_Home = Button(screen,  815,  300,  100,  40, text='Home',  fontSize=34,  margin=20, 
                           inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: home() )
 
@@ -611,12 +649,12 @@ def main():
         print_game(game.get_matrix(),game_surface)
         screen.fill((41, 41, 41), (0, game_surface.get_height(), window_size[0], 50))
         steps_label = font.render(f"Steps: {game.step}", True, (255, 255, 255))
-        time_label = font.render(f"Time: 0s", True, (255, 255, 255))
+        time_label = font.render(f"Time: {game.time}s", True, (255, 255, 255))
 
         
         state_label=font.render(f"State: {game.state}", True, (255, 255, 255))
         screen.blit(steps_label, (80, game_surface.get_height() + 10))
-        screen.blit(time_label, (360, game_surface.get_height() + 10))
+        screen.blit(time_label, (260, game_surface.get_height() + 10))
         screen.blit(state_label, (500, game_surface.get_height() + 10))
         screen.blit(game_surface, (0, 0))
 
@@ -624,8 +662,6 @@ def main():
         pygame_widgets.update(events)
         pygame.display.update()
 
-        pygame.display.update()
-    
 def ok():
     messagebox.showinfo("Hello", "BFS solve!")
 def home():
