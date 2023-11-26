@@ -39,7 +39,7 @@ class Game:
         self.stack = []
         self.matrix = matrix
         self.initial_matrix = copy.deepcopy(matrix)
-        self.listMappath = ['map/game01.txt', 'map/game02.txt', 'map/game03.txt']  
+        self.listMappath = ['map/game01.txt', 'map/game02.txt', 'map/game03.txt','map/game04.txt']  
         self.curMappath = "map/game01.txt"
         self.state="..."
         self.step = 0    
@@ -238,14 +238,14 @@ class Game:
                 self.set_content(current[0]+x,current[1]+y,'+')
                 if save: self.stack.append((x,y,True))
     def reset(self):
-        self.matrix = copy.deepcopy(self.initial_matrix)
-        # Clear other attributes related to the game state
+        self.matrix = map_open(self.curMappath) 
         self.heuristic = 0
         self.pathSol = ""
         self.step = 0
         self.state = "..."
         self.time = 0  
         self.stack = []
+        print_game(self.get_matrix(),pygame.display.get_surface())
 
 def load_next_map(game, gamesur):
     game.heuristic = 0
@@ -489,6 +489,138 @@ def AstarSolution(game):
     print("Number of visited node:",node_generated)
     print("No Solution!")
     return "NoSol"
+
+def IDSsolution(game):
+    TIME_LIMITED = 60  # Thời gian giới hạn cho tìm kiếm (đơn vị: giây)
+    DEEPMAX = 1000000  # Số lần lặp tối đa cho mỗi độ sâu
+    start = time.time()
+    node_generated = 0
+    state = copy.deepcopy(game)
+    state.heuristic = 0
+    node_generated += 1
+
+    stateSet = queue.PriorityQueue()
+    stateSet.put(state)
+    stateExplored = []
+
+    print("Processing...")
+
+    while not stateSet.empty():
+        if (time.time() - start) >= TIME_LIMITED:
+            print("Time Out!")
+            return "TimeOut"
+
+        currState = stateSet.get()
+        move = validMove(currState)
+        stateExplored.append(currState.get_matrix())
+
+        if node_generated >= DEEPMAX:
+            print("Exceeded maximum depth!")
+        
+        for step in move:
+            newState = copy.deepcopy(currState)
+            node_generated += 1
+            if step == "U":
+                newState.move(0, -1, False)
+            elif step == "D":
+                newState.move(0, 1, False)
+            elif step == "L":
+                newState.move(-1, 0, False)
+            elif step == "R":
+                newState.move(1, 0, False)
+
+            newState.pathSol += step
+            newState.heuristic +=1
+
+            if newState.is_completed():
+                end = time.time()
+                print("DFS")
+                print("Time to find solution:", round(end - start, 2), "seconds")
+                print("Number of visited node:", node_generated)
+                print("Solution:", newState.pathSol)
+                game.step = len(newState.pathSol)
+                game.time = round(end -start,2)
+                return newState.pathSol
+            
+            if node_generated >= DEEPMAX:
+                print("Exceeded maximum depth!")
+                
+
+            if (newState.get_matrix() not in stateExplored) and (not is_deadlock(newState)):
+                stateSet.put(newState)
+
+    end = time.time()
+    print("Time to find solution:", round(end - start, 2))
+    print("Number of visited node:", node_generated)
+    print("No Solution!")
+    return "NoSol"
+
+
+def DFSsolution(game):
+    DEEPMAX = 1000000
+    
+    start = time.time()
+    node_generated = 0
+    state = copy.deepcopy(game)
+    state.heuristic = 0
+    node_generated += 1
+
+    stateSet = queue.PriorityQueue()
+    stateSet.put(state)
+    stateExplored = []
+
+    print("Processing...")
+
+    while not stateSet.empty():
+        if (time.time() - start) >= TIME_LIMITED:
+            print("Time Out!")
+            return "TimeOut"
+
+        currState = stateSet.get()
+        move = validMove(currState)
+        stateExplored.append(currState.get_matrix())
+
+        if node_generated >= DEEPMAX:
+            print("Exceeded maximum depth!")
+        
+        for step in move:
+            newState = copy.deepcopy(currState)
+            node_generated += 1
+            if step == "U":
+                newState.move(0, -1, False)
+            elif step == "D":
+                newState.move(0, 1, False)
+            elif step == "L":
+                newState.move(-1, 0, False)
+            elif step == "R":
+                newState.move(1, 0, False)
+
+            newState.pathSol += step
+            # newState.heuristic +=1
+
+            if newState.is_completed():
+                end = time.time()
+                print("DFS")
+                print("Time to find solution:", round(end - start, 2), "seconds")
+                print("Number of visited node:", node_generated)
+                print("Solution:", newState.pathSol)
+                game.step = len(newState.pathSol)
+                game.time = round(end -start,2)
+                return newState.pathSol
+            
+            if node_generated >= DEEPMAX:
+                print("Exceeded maximum depth!")
+                
+
+            if (newState.get_matrix() not in stateExplored) and (not is_deadlock(newState)) :
+                stateSet.put(newState)
+
+    end = time.time()
+    print("Time to find solution:", round(end - start, 2))
+    print("Number of visited node:", node_generated)
+    print("No Solution!")
+    return "NoSol"
+    
 def UCSsolution(game):
     start = time.time()
     node_generated = 0
@@ -565,7 +697,7 @@ def a(game):
         print_game(game.get_matrix(),pygame.display.get_surface())
         pygame.display.flip()
         i+=1
-        time.sleep(0.01)    
+        time.sleep(0.1)    
 
 def ucs(game):
     i = 0
@@ -575,9 +707,28 @@ def ucs(game):
         print_game(game.get_matrix(),pygame.display.get_surface())
         pygame.display.flip()
         i+=1
-        time.sleep(0.01)    
+        time.sleep(0.1)
+def dfs(game):
+    i=0
+    sol= DFSsolution(game)
+    for move in sol:
+        playByBot(game,sol[i])
+        print_game(game.get_matrix(),pygame.display.get_surface())
+        pygame.display.flip()
+        i+=1
+        time.sleep(0.1)
+def ids(game):
+    i=0
+    sol= IDSsolution(game)
+    for move in sol:
+        playByBot(game,sol[i])
+        print_game(game.get_matrix(),pygame.display.get_surface())
+        pygame.display.flip()
+        i+=1
+        time.sleep(0.1)
+        
 def main():
-    game = Game(map_open('map/game02.txt'))
+    game = Game(map_open('map/game01.txt'))
     pygame.init()
     pygame.display.init()
     pygame.display.set_caption("Sokoban")
@@ -601,15 +752,15 @@ def main():
     button_bfs = Button(screen,  750,  100,  100,  40, text='BFS',  fontSize=34,  margin=20, 
                           inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=ok )
     button_dfs = Button(screen,  880,  100,  100,  40, text='DFS',  fontSize=34,  margin=20, 
-                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=ok )
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: dfs(game))
     button_ucs = Button(screen,  750,  150,  100,  40, text='UCS',  fontSize=34,  margin=20, 
                           inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: ucs(game) )
     button_greedy = Button(screen,  880,  150,  100,  40, text='Greedy',  fontSize=34,  margin=20, 
                           inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=ok )
     button_astar = Button(screen,  750,  200,  100,  40, text='A*',  fontSize=34,  margin=20, 
                           inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: a(game) )
-    button_bestfs = Button(screen,  880,  200,  100,  40, text='Best FS',  fontSize=34,  margin=20, 
-                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=ok )
+    button_bestfs = Button(screen,  880,  200,  100,  40, text='IDS',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda:ids(game) )
     button_nextlevel = Button(screen,  880,  350,  100,  40, text='Next',  fontSize=34,  margin=20, 
                                inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: load_next_map(game,game_surface) )
     button_previouslevel = Button(screen,  750,  350,  100,  40, text='Previous',  fontSize=34,  margin=20,  
