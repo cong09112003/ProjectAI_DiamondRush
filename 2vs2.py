@@ -1,4 +1,5 @@
 import sys
+import threading
 import pygame
 import queue
 import copy
@@ -9,7 +10,7 @@ from tkinter import messagebox
 import subprocess
 import pygame_widgets
 TIME_LIMITED = 1800
-window_size = (1000,600)
+window_size = (1370,750)
 wall = pygame.image.load('.\img\wall.png')
 floor = pygame.image.load('.\img/space.png')
 box = pygame.image.load('.\img/box.png')
@@ -39,7 +40,9 @@ class Game:
         self.stack = []
         self.matrix = matrix
         self.initial_matrix = copy.deepcopy(matrix)
-        self.listMappath = ['map/game01.txt', 'map/game02.txt', 'map/game03.txt','map/game04.txt','map/game05.txt']  
+        self.listMappath = ['map/game01.txt', 'map/game02.txt', 'map/game03.txt','map/game04.txt','map/game05.txt','map/game06.txt',
+                            'map/game07.txt','map/game08.txt','map/game09.txt','map/game10.txt','map/game11.txt','map/game12.txt',
+                            'map/game13.txt','map/game14.txt','map/game15.txt']  
         self.curMappath = "map/game01.txt"
         self.state="..."
         self.step = 0    
@@ -238,6 +241,7 @@ class Game:
                 self.set_content(current[0]+x,current[1]+y,'+')
                 if save: self.stack.append((x,y,True))
     def reset(self):
+        #current_map = self.curMappath
         self.matrix = map_open(self.curMappath) 
         self.heuristic = 0
         self.pathSol = ""
@@ -247,7 +251,7 @@ class Game:
         self.stack = []
         print_game(self.get_matrix(), pygame.display.get_surface())
 
-def load_next_map(game, gamesur):
+def load_next_map(game, game2,gamesur,gamesur2):
     game.heuristic = 0
     game.heuristic = 0
     game.pathSol = ""
@@ -255,14 +259,27 @@ def load_next_map(game, gamesur):
     game.state = "..."
     game.time = 0
     game.stack = []
+
+    game2.heuristic = 0
+    game2.heuristic = 0
+    game2.pathSol = ""
+    game2.step = 0
+    game2.state = "..."
+    game2.time = 0
+    game2.stack = []
+
     gamesur.fill((41, 41, 41))
+    gamesur2.fill((41, 41, 41))
     index = game.listMappath.index(game.curMappath)
     if index < len(game.listMappath) - 1:
         game.curMappath = game.listMappath[index + 1]
+        game2.curMappath = game2.listMappath[index+1]
         game.matrix = map_open(game.curMappath)
+        game2.matrix = map_open(game2.curMappath)
         print_game(game.get_matrix(), gamesur)
+        print_game(game2.get_matrix(),gamesur2)
 
-def load_previous_map(game, gamesur):
+def load_previous_map(game,game2, gamesur,gamesur2):
     game.heuristic = 0
     game.heuristic = 0
     game.pathSol = ""
@@ -270,12 +287,25 @@ def load_previous_map(game, gamesur):
     game.state = "..."
     game.time = 0
     game.stack = []
+    
+    game2.heuristic = 0
+    game2.heuristic = 0
+    game2.pathSol = ""
+    game2.step = 0
+    game2.state = "..."
+    game2.time = 0
+    game2.stack = []
+
     gamesur.fill((41, 41, 41))
+    gamesur2.fill((41, 41, 41))
     index = game.listMappath.index(game.curMappath)
     if index > 0:
         game.curMappath = game.listMappath[index - 1]
+        game2.curMappath = game2.listMappath[index-1]
         game.matrix = map_open(game.curMappath)
+        game2.matrix = map_open(game2.curMappath)
         print_game(game.get_matrix(), gamesur)
+        print_game(game2.get_matrix(), gamesur2)
 
         
 
@@ -475,8 +505,8 @@ def AstarSolution(game):
         
             if newState.is_completed():
                 end = time.time()
-                print("Time to find solution with A*:",round(end -start,2),"seconds")
-                print("Number of visited node with A*:",node_generated)
+                print("Time to find solution:",round(end -start,2),"seconds")
+                print("Number of visited node:",node_generated)
                 print("Solution:",newState.pathSol)
                 game.step = len(newState.pathSol)
                 game.time = round(end -start,2)
@@ -528,8 +558,8 @@ def UCSsolution(game):
 
             if newState.is_completed():
                 end = time.time()
-                print("Time to find solution with UCS:", round(end - start, 2), "seconds")
-                print("Number of visited node with UCS:", node_generated)
+                print("Time to find solution:", round(end - start, 2), "seconds")
+                print("Number of visited node:", node_generated)
                 print("Solution:", newState.pathSol)
                 game.step = len(newState.pathSol)
                 game.time = round(end -start,2)
@@ -679,7 +709,7 @@ def DFSsolution(game):
 def BFSsolution(game):
     start = time.time()
     node_generated = 0
-    state = copy.deepcopy(game) # Parent Node                 
+    state = copy.deepcopy(game)                  
     node_generated += 1
     if is_deadlock(state):
         end = time.time()
@@ -687,18 +717,18 @@ def BFSsolution(game):
         print("Number of visited node:",node_generated)
         print("No Solution!")
         return "NoSol"
-    stateSet = queue.Queue()    # Queue to store traversed nodes 
+    stateSet = queue.Queue()    
     stateSet.put(state)
-    stateExplored = []          # list of visited node (store matrix of nodes)
+    stateExplored = []          
     print("Processing...")
     '''Traverse until there is no available node (No Solution)'''
     while not stateSet.empty():
         if (time.time() - start) >= TIME_LIMITED:
             print("Time Out!")
             return "TimeOut"                    
-        currState = stateSet.get()                      # get the top node of the queue to be the current node
-        move = validMove(currState)                     # find next valid moves of current node in type of list of char ["U","D","L","R"]
-        stateExplored.append(currState.get_matrix())    # add matrix of current node to visited list
+        currState = stateSet.get()                      
+        move = validMove(currState)                     
+        stateExplored.append(currState.get_matrix())    
         ''' For each valid move:
                 Generate child nodes by updating the current node with move
                 If the child node is not visited và not lead to deadlock (box on the corner), put it in queue of nodes
@@ -722,6 +752,7 @@ def BFSsolution(game):
                 print("Number of visited node:",node_generated)
                 print("Solution:",newState.pathSol)
                 game.step = len(newState.pathSol)
+                game.time = round(end -start,2)
                 return newState.pathSol
 
             if (newState.get_matrix() not in stateExplored) and (not is_deadlock(newState)):
@@ -789,7 +820,6 @@ def GreedySolution(game):
     print("No Solution!")
     return "NoSol"
 
-
 def playByBot(game,move):
     if move == "U":
         game.move(0,-1,False)
@@ -802,62 +832,110 @@ def playByBot(game,move):
     else:
         game.move(0,0,False)
 
-def a(game):
-    sol = AstarSolution(game)
-    for move in sol:
-        playByBot(game,move)
-        print_game(game.get_matrix(),pygame.display.get_surface())
-        pygame.display.flip()
-        time.sleep(0.01)    
+def a1():
+    global al
+    al = "A*"
+def a2():
+    global al2
+    al2 = "A*"
 
-def ucs(game):
-    sol = UCSsolution(game)
+def ucs1():
+    global al
+    al = "UCS"
+def ucs2():
+    global al2
+    al2 = "UCS"
+
+def dfs1():
+    global al
+    al = "DFS"
+def dfs2():
+    global al2
+    al2 = "DFS"
+
+def ids1():
+    global al
+    al = "IDS"
+def ids2():
+    global al2
+    al2 = "IDS"
+
+def bfs1():
+    global al
+    al = "BFS"
+def bfs2():
+    global al2
+    al2 = "BFS"
+
+def greedy1():
+    global al
+    al = "Greedy"
+def greedy2():
+    global al2
+    al2 = "Greedy"
+
+def run_solution1(screen, game, sur):
+    i = 0
+    global al
+    if al == "A*":
+        sol = AstarSolution(game)
+    if al == "UCS":
+        sol = UCSsolution(game)
+    if al == "BFS":
+        sol = BFSsolution(game)
+    if al == "DFS":
+        sol = DFSsolution(game)
+    if al == "Greedy":
+        sol = GreedySolution(game)
+    if al == "IDS":
+        sol = IDSsolution(game)
     for move in sol:
-        playByBot(game,move)
-        print_game(game.get_matrix(),pygame.display.get_surface())
+        playByBot(game, move)
+        print_game(game.get_matrix(), sur)
+        screen.blit(sur, (0, 0))
         pygame.display.flip()
+        i += 1
         time.sleep(0.01)
 
-def dfs(game):
-    i=0
-    sol= DFSsolution(game)
-    for move in sol:
-        playByBot(game,sol[i])
-        print_game(game.get_matrix(),pygame.display.get_surface())
+def run_solution2(screen, game2, sur2):
+    i = 0
+    global al2
+    if al2 == "A*":
+        sol2 = AstarSolution(game2)
+    if al2 == "UCS":
+        sol2 = UCSsolution(game2)
+    if al2 == "BFS":
+        sol2 = BFSsolution(game2)
+    if al2 == "DFS":
+        sol2 = DFSsolution(game2)
+    if al2 == "Greedy":
+        sol2 = GreedySolution(game2)
+    if al2 == "IDS":
+        sol2 = IDSsolution(game2)
+
+    for move2 in sol2:
+        playByBot(game2, move2)
+        print_game(game2.get_matrix(), sur2)
+        screen.blit(sur2, (730, 0))
         pygame.display.flip()
-        i+=1
-        time.sleep(0.01)
-def ids(game):
-    i=0
-    sol= IDSsolution(game)
-    for move in sol:
-        playByBot(game,sol[i])
-        print_game(game.get_matrix(),pygame.display.get_surface())
-        pygame.display.flip()
-        i+=1
+        i += 1
         time.sleep(0.01)
 
-def bfs(game):
-    i=0
-    sol= BFSsolution(game)
-    for move in sol:
-        playByBot(game,sol[i])
-        print_game(game.get_matrix(),pygame.display.get_surface())
-        pygame.display.flip()
-        i+=1
-        time.sleep(0.01)
-def greedy(game):
-    i=0
-    sol= GreedySolution(game)
-    for move in sol:
-        playByBot(game,sol[i])
-        print_game(game.get_matrix(),pygame.display.get_surface())
-        pygame.display.flip()
-        i+=1
-        time.sleep(0.01)
+def testrun(screen, game, game2, sur, sur2):
+    thread1 = threading.Thread(target=run_solution1, args=(screen, game, sur))
+    thread2 = threading.Thread(target=run_solution2, args=(screen, game2, sur2))
 
+    thread1.start()
+    thread2.start()
+
+    thread1.join()
+    thread2.join()
+
+al ="..."
+al2 ="..."
 def main():
     game = Game(map_open('map/game01.txt'))
+    game2 = Game(map_open('map/game01.txt'))
     pygame.init()
     pygame.display.init()
     pygame.display.set_caption("Sokoban")
@@ -870,32 +948,55 @@ def main():
     game_surface = pygame.Surface(game_surface_size)
     game_surface.fill((41,41,41))
 
-    print_game(game.get_matrix(),game_surface)
+    game_surface_size2 = (720, 400)
+    game_surface2 = pygame.Surface(game_surface_size2)
+    game_surface2.fill((41,41,41))
 
     font = pygame.font.Font(None, 36)
 
-    #Button trong game
-    button_reset = Button(screen,  815,  50,  100,  40, text='Reset',  fontSize=34,  margin=20, 
+
+    #Button trong game của player 1
+    button_reset = Button(screen,  300,  450,  100,  40, text='Reset',  fontSize=34,  margin=20, 
                           inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: game.reset() )
     
-    button_bfs = Button(screen,  750,  100,  100,  40, text='BFS',  fontSize=34,  margin=20, 
-                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: bfs(game) )
-    button_dfs = Button(screen,  880,  100,  100,  40, text='DFS',  fontSize=34,  margin=20, 
-                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: dfs(game) )
-    button_ucs = Button(screen,  750,  150,  100,  40, text='UCS',  fontSize=34,  margin=20, 
-                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: ucs(game) )
-    button_greedy = Button(screen,  880,  150,  100,  40, text='Greedy',  fontSize=34,  margin=20, 
-                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: greedy(game) )
-    button_astar = Button(screen,  750,  200,  100,  40, text='A*',  fontSize=34,  margin=20, 
-                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: a(game) )
-    button_bestfs = Button(screen,  880,  200,  100,  40, text='IDS',  fontSize=34,  margin=20, 
-                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: ids(game) )
-    button_nextlevel = Button(screen,  880,  350,  100,  40, text='Next',  fontSize=34,  margin=20, 
-                               inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: load_next_map(game,game_surface) )
-    button_previouslevel = Button(screen,  750,  350,  100,  40, text='Previous',  fontSize=34,  margin=20,  
-                                  inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: load_previous_map(game,game_surface) )
-    button_Home = Button(screen,  815,  300,  100,  40, text='Home',  fontSize=34,  margin=20, 
+    button_bfs = Button(screen,  235,  500,  100,  40, text='BFS',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: bfs1() )
+    button_dfs = Button(screen,  365,  500,  100,  40, text='DFS',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: dfs1() )
+    button_ucs = Button(screen,  235,  550,  100,  40, text='UCS',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: ucs1() )
+    button_greedy = Button(screen,  365,  550,  100,  40, text='Greedy',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: greedy1() )
+    button_astar = Button(screen,  235,  600,  100,  40, text='A*',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: a1() )
+    button_bestfs = Button(screen,  365,  600,  100,  40, text='IDS',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: ids1() )
+    button_nextlevel = Button(screen,  700-20+50,  700,  100,  40, text='Next',  fontSize=34,  margin=20, 
+                               inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: load_next_map(game,game2,game_surface,game_surface2) )
+    button_previouslevel = Button(screen,  500+20+50,  700,  100,  40, text='Previous',  fontSize=34,  margin=20,  
+                                  inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: load_previous_map(game,game2,game_surface,game_surface2) )
+    button_Home = Button(screen,  600+50,  650,  100,  40, text='Home',  fontSize=34,  margin=20, 
                           inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: home() )
+    button_Run = Button(screen,  600+50,  600,  100,  40, text='Run',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: testrun(screen,game,game2,game_surface,game_surface2) )
+    
+    #Button trong game của player 2
+    button_reset = Button(screen,  300+710,  450,  100,  40, text='Reset',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: game2.reset() )
+    
+    button_bfs = Button(screen,  235+710,  500,  100,  40, text='BFS',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: bfs2() )
+    button_dfs = Button(screen,  365+710,  500,  100,  40, text='DFS',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: dfs2() )
+    button_ucs = Button(screen,  235+710,  550,  100,  40, text='UCS',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: ucs2() )
+    button_greedy = Button(screen,  365+710,  550,  100,  40, text='Greedy',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: greedy2() )
+    button_astar = Button(screen,  235+710,  600,  100,  40, text='A*',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: a2() )
+    button_bestfs = Button(screen,  365+710,  600,  100,  40, text='IDS',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: ids2() )
+    
 
     while True:
         events = pygame.event.get()
@@ -913,30 +1014,68 @@ def main():
                 elif event.key == pygame.K_DOWN:
                     game.move(0,1, True)
                     game.step += 1
-                elif event.key == pygame.K_a:
-                    sol = AstarSolution(game)
-                    flagAuto = 1
-                elif event.key == pygame.K_p:
-                    sol = UCSsolution(game)
-                    flagAuto = 1
-                elif event.key == pygame.K_d: 
+                elif event.key == pygame.K_f: 
                     game.unmove()
+                elif event.key == pygame.K_KP4: 
+                    game2.move(-1,0, True)
+                    game2.step += 1
+                elif event.key == pygame.K_KP6: 
+                    game2.move(1,0, True)
+                    game2.step += 1
+                elif event.key == pygame.K_KP8: 
+                    game2.move(0,-1, True)
+                    game2.step += 1
+                elif event.key == pygame.K_KP2: 
+                    game2.move(0,1, True)
+                    game2.step += 1
             elif event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-        if game.is_completed(): 
+        if game.step > game2.step:
+            game.state = 'Lose'
+            game2.state = 'Win'
+        elif game.step < game2.step:
             game.state = 'Win'
+            game2.state = 'Lose'
+        else:
+            if game.time > game2.time:
+                game.state = 'Lose'
+                game2.state = 'Win'
+            elif game.time < game2.time:
+                game.state = 'Win'
+                game2.state = 'Lose'
+            else:
+                game.state = 'Draw'
+                game2.state = 'Draw'
         print_game(game.get_matrix(),game_surface)
+        print_game(game2.get_matrix(),game_surface2)
+
         screen.fill((41, 41, 41), (0, game_surface.get_height(), window_size[0], 50))
+        al1_label = font.render(f"Algorithm: {al}", True, (255, 255, 255))
         steps_label = font.render(f"Steps: {game.step}", True, (255, 255, 255))
         time_label = font.render(f"Time: {game.time}s", True, (255, 255, 255))
-
-        
         state_label=font.render(f"State: {game.state}", True, (255, 255, 255))
-        screen.blit(steps_label, (80, game_surface.get_height() + 10))
-        screen.blit(time_label, (260, game_surface.get_height() + 10))
-        screen.blit(state_label, (500, game_surface.get_height() + 10))
+
+
+        screen.fill((41, 41, 41), (0, game_surface2.get_height(), window_size[0], 50))
+        al2_label = font.render(f"Algorithm: {al2}", True, (255, 255, 255))
+        steps_label2 = font.render(f"Steps: {game2.step}", True, (255, 255, 255))
+        time_label2 = font.render(f"Time: {game2.time}s", True, (255, 255, 255))
+        state_label2=font.render(f"State: {game2.state}", True, (255, 255, 255))
+
+        screen.blit(steps_label, (10, game_surface.get_height() + 10))
+        screen.blit(time_label, (140, game_surface.get_height() + 10))
+        screen.blit(state_label, (300, game_surface.get_height() + 10))
+        screen.blit(al1_label, (440, game_surface.get_height() + 10))
+
+        screen.blit(steps_label2, (10+700, game_surface2.get_height() + 10))
+        screen.blit(time_label2, (140+700, game_surface2.get_height() + 10))
+        screen.blit(state_label2, (300+700, game_surface2.get_height() + 10))
+        screen.blit(al2_label, (440+700, game_surface.get_height() + 10))
+
         screen.blit(game_surface, (0, 0))
+        screen.blit(game_surface2, (730, 0))
+
 
         pygame.display.flip()
         pygame_widgets.update(events)
