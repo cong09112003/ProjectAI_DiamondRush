@@ -90,7 +90,6 @@ def next_level():
 current_interface = "menu"
 #Button for Menu
 switch_button = Button(1100, 400, 150, 75, (255, 255, 255), "Single play", switch_interface)
-startMenu_button = Button(1100, 300, 150, 75, (255, 255, 255), "Start", startMenu_game)
 endMenu_button = Button(1100, 600, 150, 75, (255, 255, 255), "Quit", endMenu_game)
 multiplePlay_button = Button(1100, 500, 150, 75, (255, 255, 255), "Multiple play", multiplePlay_game)
 
@@ -116,7 +115,6 @@ while running:
     if current_interface == "menu":
         # Draw interface 1
         screen.blit(backgroundmenu, (0, 0))
-        startMenu_button.draw(screen)
         endMenu_button.draw(screen)
         switch_button.draw(screen)
         multiplePlay_button.draw(screen)
@@ -124,7 +122,6 @@ while running:
             if event.type == pygame.QUIT:
                 running = False
             else:
-                startMenu_button.handle_event(event)
                 endMenu_button.handle_event(event)
                 switch_button.handle_event(event)
                 multiplePlay_button.handle_event(event)
