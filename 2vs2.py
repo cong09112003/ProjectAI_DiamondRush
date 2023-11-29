@@ -241,7 +241,6 @@ class Game:
                 self.set_content(current[0]+x,current[1]+y,'+')
                 if save: self.stack.append((x,y,True))
     def reset(self):
-        #current_map = self.curMappath
         self.matrix = map_open(self.curMappath) 
         self.heuristic = 0
         self.pathSol = ""
@@ -249,7 +248,6 @@ class Game:
         self.state = "..."
         self.time = 0  
         self.stack = []
-        print_game(self.get_matrix(), pygame.display.get_surface())
 
 def load_next_map(game, game2,gamesur,gamesur2):
     game.heuristic = 0
@@ -528,13 +526,23 @@ def AstarSolution(game):
     print("Number of visited node:",node_generated)
     print("No Solution!")
     return "NoSol"
+
 def UCSsolution(game):
     start = time.time()
     node_generated = 0
     state = copy.deepcopy(game)
-    state.heuristic = 0
+    state.cost = 0
     node_generated += 1
-
+    if is_deadlock(state):
+        end = time.time()
+        print("Time to find solution:",round(end -start,2))
+        print("Number of visited node:",node_generated)
+        print("No Solution!")
+        return "NoSol"                 
+    stateSet = queue.PriorityQueue()    
+    stateSet.put(state)
+    stateExplored = []                 
+    print("Processing...")
     stateSet = queue.PriorityQueue()
     stateSet.put(state)
     stateExplored = []
@@ -553,6 +561,7 @@ def UCSsolution(game):
         for step in move:
             newState = copy.deepcopy(currState)
             node_generated += 1
+
             if step == "U":
                 newState.move(0, -1, False)
             elif step == "D":
@@ -563,7 +572,7 @@ def UCSsolution(game):
                 newState.move(1, 0, False)
 
             newState.pathSol += step
-            newState.heuristic = len(newState.pathSol)  
+            newState.cost = len(newState.pathSol)  
 
             if newState.is_completed():
                 end = time.time()
@@ -573,7 +582,6 @@ def UCSsolution(game):
                 game.step = len(newState.pathSol)
                 game.time = round(end -start,2)
                 return newState.pathSol
-                
 
             if (newState.get_matrix() not in stateExplored) and (not is_deadlock(newState)):
                 stateSet.put(newState)
@@ -583,6 +591,7 @@ def UCSsolution(game):
     print("Number of visited node:", node_generated)
     print("No Solution!")
     return "NoSol"
+
 
 def IDSsolution(game):
     TIME_LIMITED = 60  # Thời gian giới hạn cho tìm kiếm (đơn vị: giây)
@@ -726,22 +735,19 @@ def BFSsolution(game):
         print("Number of visited node:",node_generated)
         print("No Solution!")
         return "NoSol"
+    
     stateSet = queue.Queue()    
     stateSet.put(state)
     stateExplored = []          
     print("Processing...")
-    '''Traverse until there is no available node (No Solution)'''
     while not stateSet.empty():
         if (time.time() - start) >= TIME_LIMITED:
             print("Time Out!")
             return "TimeOut"                    
-        currState = stateSet.get()                      
+        currState = stateSet.get()      
+                        
         move = validMove(currState)                     
         stateExplored.append(currState.get_matrix())    
-        ''' For each valid move:
-                Generate child nodes by updating the current node with move
-                If the child node is not visited và not lead to deadlock (box on the corner), put it in queue of nodes
-                If the child node is the end node to win, return the path of it'''
         for step in move:                               
             newState = copy.deepcopy(currState)
             node_generated += 1
@@ -904,7 +910,7 @@ def run_solution1(screen, game, sur):
         screen.blit(sur, (0, 0))
         pygame.display.flip()
         i += 1
-        time.sleep(0.01)
+        time.sleep(0.1)
 
 def run_solution2(screen, game2, sur2):
     i = 0
@@ -928,7 +934,7 @@ def run_solution2(screen, game2, sur2):
         screen.blit(sur2, (730, 0))
         pygame.display.flip()
         i += 1
-        time.sleep(0.01)
+        time.sleep(0.1)
 
 def testrun(screen, game, game2, sur, sur2):
     thread1 = threading.Thread(target=run_solution1, args=(screen, game, sur))

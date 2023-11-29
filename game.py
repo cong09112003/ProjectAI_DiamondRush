@@ -811,12 +811,13 @@ def playByBot(game,move):
     else:
         game.move(0,0,False)
 
-def a(game):
+def a(screen,game,game_surface):
     sol = AstarSolution(game)
     for move in sol:
         playByBot(game,move)
         print_game(game.get_matrix(),pygame.display.get_surface())
         pygame.display.flip()
+        screen.blit(game_surface, (0, 0))
         time.sleep(0.01)    
 
 def ucs(game):
@@ -831,7 +832,7 @@ def dfs(game):
     i=0
     sol= DFSsolution(game)
     for move in sol:
-        playByBot(game,sol[i])
+        playByBot(game,move)
         print_game(game.get_matrix(),pygame.display.get_surface())
         pygame.display.flip()
         i+=1
@@ -840,7 +841,7 @@ def ids(game):
     i=0
     sol= IDSsolution(game)
     for move in sol:
-        playByBot(game,sol[i])
+        playByBot(game,move)
         print_game(game.get_matrix(),pygame.display.get_surface())
         pygame.display.flip()
         i+=1
@@ -850,7 +851,7 @@ def bfs(game):
     i=0
     sol= BFSsolution(game)
     for move in sol:
-        playByBot(game,sol[i])
+        playByBot(game,move)
         print_game(game.get_matrix(),pygame.display.get_surface())
         pygame.display.flip()
         i+=1
@@ -859,7 +860,7 @@ def greedy(game):
     i=0
     sol= GreedySolution(game)
     for move in sol:
-        playByBot(game,sol[i])
+        playByBot(game,move)
         print_game(game.get_matrix(),pygame.display.get_surface())
         pygame.display.flip()
         i+=1
@@ -896,7 +897,7 @@ def main():
     button_greedy = Button(screen,  880,  150,  100,  40, text='Greedy',  fontSize=34,  margin=20, 
                           inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: greedy(game) )
     button_astar = Button(screen,  750,  200,  100,  40, text='A*',  fontSize=34,  margin=20, 
-                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: a(game) )
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: a(screen,game,game_surface) )
     button_bestfs = Button(screen,  880,  200,  100,  40, text='IDS',  fontSize=34,  margin=20, 
                           inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: ids(game) )
     button_nextlevel = Button(screen,  880,  350,  100,  40, text='Next',  fontSize=34,  margin=20, 
