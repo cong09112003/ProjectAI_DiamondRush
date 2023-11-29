@@ -9,6 +9,7 @@ from pygame_widgets.combobox import ComboBox
 from tkinter import messagebox
 import subprocess
 import pygame_widgets
+from queue import PriorityQueue
 TIME_LIMITED = 1800
 window_size = (1370,750)
 wall = pygame.image.load('.\img\wall.png')
@@ -530,8 +531,7 @@ def AstarSolution(game):
 def UCSsolution(game):
     start = time.time()
     node_generated = 0
-    state = copy.deepcopy(game)
-    state.cost = 0
+    state = copy.deepcopy(game) 
     node_generated += 1
     if is_deadlock(state):
         end = time.time()
@@ -539,59 +539,47 @@ def UCSsolution(game):
         print("Number of visited node:",node_generated)
         print("No Solution!")
         return "NoSol"                 
-    stateSet = queue.PriorityQueue()    
-    stateSet.put(state)
+    stateSet = PriorityQueue()    
+    stateSet.put((0, state))  
     stateExplored = []                 
     print("Processing...")
-    stateSet = queue.PriorityQueue()
-    stateSet.put(state)
-    stateExplored = []
-
-    print("Processing...")
-
     while not stateSet.empty():
         if (time.time() - start) >= TIME_LIMITED:
             print("Time Out!")
-            return "TimeOut"
-
-        currState = stateSet.get()
-        move = validMove(currState)
-        stateExplored.append(currState.get_matrix())
-
-        for step in move:
+            return "TimeOut"                        
+        _, currState = stateSet.get()                    
+        move = validMove(currState)                     
+        stateExplored.append(currState.get_matrix())    
+        
+        for step in move:                              
             newState = copy.deepcopy(currState)
             node_generated += 1
-
             if step == "U":
-                newState.move(0, -1, False)
+                newState.move(0,-1,False)
             elif step == "D":
-                newState.move(0, 1, False)
+                newState.move(0,1,False)
             elif step == "L":
-                newState.move(-1, 0, False)
+                newState.move(-1,0,False)
             elif step == "R":
-                newState.move(1, 0, False)
-
+                newState.move(1,0,False)
             newState.pathSol += step
-            newState.cost = len(newState.pathSol)  
-
+        
             if newState.is_completed():
                 end = time.time()
-                print("Time to find solution:", round(end - start, 2), "seconds")
-                print("Number of visited node:", node_generated)
-                print("Solution:", newState.pathSol)
+                print("Time to find solution with UCS:",round(end -start,2),"seconds")
+                print("Number of visited node with UCS:",node_generated)
+                print("Solution:",newState.pathSol)
                 game.step = len(newState.pathSol)
                 game.time = round(end -start,2)
                 return newState.pathSol
 
             if (newState.get_matrix() not in stateExplored) and (not is_deadlock(newState)):
-                stateSet.put(newState)
-
+                stateSet.put((len(newState.pathSol), newState))  # Add the cost to the queue
     end = time.time()
-    print("Time to find solution:", round(end - start, 2))
-    print("Number of visited node:", node_generated)
+    print("Time to find solution:",round(end -start,2))
+    print("Number of visited node:",node_generated)
     print("No Solution!")
     return "NoSol"
-
 
 def IDSsolution(game):
     TIME_LIMITED = 200  # Assuming a time limit of 60 seconds
@@ -653,8 +641,8 @@ def depthLimitedDFS(game, depth_limit, start, node_generated, time_limit):
                 game.time = round(end - start, 2)
                 return newState.pathSol
 
-            if node_generated >= depth_limit:
-                print("Exceeded maximum depth!")
+            # if node_generated >= depth_limit:
+            #     print("Exceeded maximum depth!")
 
             if tuple(map(tuple, newState.get_matrix())) not in stateExplored and not is_deadlock(newState):
                 stateSet.append(newState)

@@ -6,6 +6,7 @@ import time
 from pygame_widgets.button import Button
 from pygame_widgets.combobox import ComboBox
 from tkinter import messagebox
+from queue import PriorityQueue
 import subprocess
 import pygame_widgets
 TIME_LIMITED = 1800
@@ -39,9 +40,7 @@ class Game:
         self.stack = []
         self.matrix = matrix
         self.initial_matrix = copy.deepcopy(matrix)
-        self.listMappath = ['map/game01.txt', 'map/game02.txt', 'map/game03.txt','map/game04.txt','map/game05.txt','map/game06.txt',
-                            'map/game07.txt','map/game08.txt','map/game09.txt','map/game10.txt','map/game11.txt','map/game12.txt',
-                            'map/game13.txt','map/game14.txt','map/game15.txt']  
+        self.listMappath = ['map/game01.txt', 'map/game02.txt', 'map/game03.txt','map/game04.txt','map/game05.txt']  
         self.curMappath = "map/game01.txt"
         self.state="..."
         self.step = 0    
@@ -500,59 +499,57 @@ def AstarSolution(game):
     print("Number of visited node:",node_generated)
     print("No Solution!")
     return "NoSol"
+
 def UCSsolution(game):
     start = time.time()
     node_generated = 0
-    state = copy.deepcopy(game)
-    state.heuristic = 0
+    state = copy.deepcopy(game) 
     node_generated += 1
-
-    stateSet = queue.PriorityQueue()
-    stateSet.put(state)
-    stateExplored = []
-
+    if is_deadlock(state):
+        end = time.time()
+        print("Time to find solution:",round(end -start,2))
+        print("Number of visited node:",node_generated)
+        print("No Solution!")
+        return "NoSol"                 
+    stateSet = PriorityQueue()    
+    stateSet.put((0, state))  
+    stateExplored = []                 
     print("Processing...")
-
     while not stateSet.empty():
         if (time.time() - start) >= TIME_LIMITED:
             print("Time Out!")
-            return "TimeOut"
-
-        currState = stateSet.get()
-        move = validMove(currState)
-        stateExplored.append(currState.get_matrix())
-
-        for step in move:
+            return "TimeOut"                        
+        _, currState = stateSet.get()                    
+        move = validMove(currState)                     
+        stateExplored.append(currState.get_matrix())    
+        
+        for step in move:                              
             newState = copy.deepcopy(currState)
             node_generated += 1
             if step == "U":
-                newState.move(0, -1, False)
+                newState.move(0,-1,False)
             elif step == "D":
-                newState.move(0, 1, False)
+                newState.move(0,1,False)
             elif step == "L":
-                newState.move(-1, 0, False)
+                newState.move(-1,0,False)
             elif step == "R":
-                newState.move(1, 0, False)
-
+                newState.move(1,0,False)
             newState.pathSol += step
-            newState.heuristic = len(newState.pathSol)  
-
+        
             if newState.is_completed():
                 end = time.time()
-                print("Time to find solution with UCS:", round(end - start, 2), "seconds")
-                print("Number of visited node with UCS:", node_generated)
-                print("Solution:", newState.pathSol)
+                print("Time to find solution with UCS:",round(end -start,2),"seconds")
+                print("Number of visited node with UCS:",node_generated)
+                print("Solution:",newState.pathSol)
                 game.step = len(newState.pathSol)
                 game.time = round(end -start,2)
                 return newState.pathSol
-                
 
             if (newState.get_matrix() not in stateExplored) and (not is_deadlock(newState)):
-                stateSet.put(newState)
-
+                stateSet.put((len(newState.pathSol), newState))  # Add the cost to the queue
     end = time.time()
-    print("Time to find solution:", round(end - start, 2))
-    print("Number of visited node:", node_generated)
+    print("Time to find solution:",round(end -start,2))
+    print("Number of visited node:",node_generated)
     print("No Solution!")
     return "NoSol"
 
@@ -685,6 +682,60 @@ def DFSsolution(game):
     print("No Solution!")
     return "NoSol"
 
+def BFSsolution(game):
+    start = time.time()
+    node_generated = 0
+    state = copy.deepcopy(game)                  
+    node_generated += 1
+    if is_deadlock(state):
+        end = time.time()
+        print("Time to find solution:",round(end -start,2))
+        print("Number of visited node:",node_generated)
+        print("No Solution!")
+        return "NoSol"
+    
+    stateSet = queue.Queue()    
+    stateSet.put(state)
+    stateExplored = []          
+    print("Processing...")
+    while not stateSet.empty():
+        if (time.time() - start) >= TIME_LIMITED:
+            print("Time Out!")
+            return "TimeOut"                    
+        currState = stateSet.get()      
+                        
+        move = validMove(currState)                     
+        stateExplored.append(currState.get_matrix())    
+        for step in move:                               
+            newState = copy.deepcopy(currState)
+            node_generated += 1
+            if step == "U":
+                newState.move(0,-1,False)
+            elif step == "D":
+                newState.move(0,1,False)
+            elif step == "L":
+                newState.move(-1,0,False)
+            elif step == "R":
+                newState.move(1,0,False)
+            newState.pathSol += step
+        
+            if newState.is_completed():
+                end = time.time()
+                print("Time to find solution:",round(end -start,2),"seconds")
+                print("Number of visited node:",node_generated)
+                print("Solution:",newState.pathSol)
+                game.step = len(newState.pathSol)
+                game.time = round(end -start,2)
+                return newState.pathSol
+
+            if (newState.get_matrix() not in stateExplored) and (not is_deadlock(newState)):
+                stateSet.put(newState)
+    end = time.time()
+    print("Time to find solution:",round(end -start,2))
+    print("Number of visited node:",node_generated)
+    print("No Solution!")
+    return "NoSol"
+
 def GreedySolution(game):
    
     start = time.time()
@@ -762,7 +813,7 @@ def a(screen,game,game_surface):
         print_game(game.get_matrix(),pygame.display.get_surface())
         pygame.display.flip()
         screen.blit(game_surface, (0, 0))
-        time.sleep(0.01)    
+        time.sleep(0.1)    
 
 def ucs(game):
     sol = UCSsolution(game)
@@ -770,7 +821,7 @@ def ucs(game):
         playByBot(game,move)
         print_game(game.get_matrix(),pygame.display.get_surface())
         pygame.display.flip()
-        time.sleep(0.01)
+        time.sleep(0.1)
 
 def dfs(game):
     i=0
@@ -780,7 +831,7 @@ def dfs(game):
         print_game(game.get_matrix(),pygame.display.get_surface())
         pygame.display.flip()
         i+=1
-        time.sleep(0.01)
+        time.sleep(0.1)
 def ids(game):
     i=0
     sol= IDSsolution(game)
@@ -789,7 +840,7 @@ def ids(game):
         print_game(game.get_matrix(),pygame.display.get_surface())
         pygame.display.flip()
         i+=1
-        time.sleep(0.01)
+        time.sleep(0.1)
 
 def bfs(game):
     i=0
@@ -799,7 +850,7 @@ def bfs(game):
         print_game(game.get_matrix(),pygame.display.get_surface())
         pygame.display.flip()
         i+=1
-        time.sleep(0.01)
+        time.sleep(0.1)
 def greedy(game):
     i=0
     sol= GreedySolution(game)
@@ -808,7 +859,7 @@ def greedy(game):
         print_game(game.get_matrix(),pygame.display.get_surface())
         pygame.display.flip()
         i+=1
-        time.sleep(0.01)
+        time.sleep(0.1)
 
 def main():
     game = Game(map_open('map/game01.txt'))
