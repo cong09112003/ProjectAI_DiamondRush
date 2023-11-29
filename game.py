@@ -40,7 +40,8 @@ class Game:
         self.stack = []
         self.matrix = matrix
         self.initial_matrix = copy.deepcopy(matrix)
-        self.listMappath = ['map/game01.txt', 'map/game02.txt', 'map/game03.txt','map/game04.txt','map/game05.txt']  
+        self.listMappath = ['map/game01.txt', 'map/game02.txt', 'map/game03.txt','map/game04.txt','map/game05.txt','map/game06.txt','map/game07.txt','map/game08.txt','map/game09.txt','map/game10.txt'
+                            ,'map/game11.txt','map/game12.txt','map/game13.txt','map/game14.txt','map/game15.txt']  
         self.curMappath = "map/game01.txt"
         self.state="..."
         self.step = 0    
