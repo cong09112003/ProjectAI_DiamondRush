@@ -555,32 +555,41 @@ def UCSsolution(game):
     return "NoSol"
 
 def IDSsolution(game):
-    TIME_LIMITED = 60  # Thời gian giới hạn cho tìm kiếm (đơn vị: giây)
-    DEEPMAX = 1000000  # Số lần lặp tối đa cho mỗi độ sâu
+    TIME_LIMITED = 200  # Assuming a time limit of 60 seconds
+
     start = time.time()
     node_generated = 0
+
+    depth_limit = 1
+    while True:
+        result = depthLimitedDFS(game, depth_limit, start, node_generated, TIME_LIMITED)
+
+        if result == "TimeOut":
+            print("Time Out!")
+            return "TimeOut"
+        elif result != "NoSol":
+            return result
+
+        depth_limit += 1
+def depthLimitedDFS(game, depth_limit, start, node_generated, time_limit):
     state = copy.deepcopy(game)
     state.heuristic = 0
     node_generated += 1
-
-    stateSet = queue.PriorityQueue()
-    stateSet.put(state)
-    stateExplored = []
-
-    print("Processing...")
-
-    while not stateSet.empty():
-        if (time.time() - start) >= TIME_LIMITED:
+    stateSet = [state]  # Use a list as a stack
+    stateExplored = set()
+    print(f"Processing with depth limit {depth_limit}...")
+    while stateSet:
+        if (time.time() - start) >= time_limit:
             print("Time Out!")
             return "TimeOut"
 
-        currState = stateSet.get()
+        currState = stateSet.pop()
         move = validMove(currState)
-        stateExplored.append(currState.get_matrix())
+        stateExplored.add(tuple(map(tuple, currState.get_matrix())))
 
-        if node_generated >= DEEPMAX:
-            print("Exceeded maximum depth!")
-        
+        # if node_generated >= depth_limit:
+        #     print("Exceeded maximum depth!")
+
         for step in move:
             newState = copy.deepcopy(currState)
             node_generated += 1
@@ -594,59 +603,50 @@ def IDSsolution(game):
                 newState.move(1, 0, False)
 
             newState.pathSol += step
-            newState.heuristic +=1
 
             if newState.is_completed():
                 end = time.time()
-                print("DFS")
+                print("IDS")
                 print("Time to find solution:", round(end - start, 2), "seconds")
                 print("Number of visited node:", node_generated)
                 print("Solution:", newState.pathSol)
                 game.step = len(newState.pathSol)
-                game.time = round(end -start,2)
+                game.time = round(end - start, 2)
                 return newState.pathSol
-            
-            if node_generated >= DEEPMAX:
+
+            if node_generated >= depth_limit:
                 print("Exceeded maximum depth!")
-                
 
-            if (newState.get_matrix() not in stateExplored) and (not is_deadlock(newState)):
-                stateSet.put(newState)
-
-    end = time.time()
-    print("Time to find solution:", round(end - start, 2))
-    print("Number of visited node:", node_generated)
-    print("No Solution!")
+            if tuple(map(tuple, newState.get_matrix())) not in stateExplored and not is_deadlock(newState):
+                stateSet.append(newState)
     return "NoSol"
-
-
 def DFSsolution(game):
     DEEPMAX = 1000000
-    
+    TIME_LIMITED = 60  
+
     start = time.time()
     node_generated = 0
     state = copy.deepcopy(game)
     state.heuristic = 0
     node_generated += 1
 
-    stateSet = queue.PriorityQueue()
-    stateSet.put(state)
-    stateExplored = []
+    stateSet = [state]  
+    stateExplored = set()
 
     print("Processing...")
 
-    while not stateSet.empty():
+    while stateSet:
         if (time.time() - start) >= TIME_LIMITED:
             print("Time Out!")
             return "TimeOut"
 
-        currState = stateSet.get()
+        currState = stateSet.pop()
         move = validMove(currState)
-        stateExplored.append(currState.get_matrix())
+        stateExplored.add(tuple(map(tuple, currState.get_matrix())))
 
         if node_generated >= DEEPMAX:
             print("Exceeded maximum depth!")
-        
+
         for step in move:
             newState = copy.deepcopy(currState)
             node_generated += 1
@@ -660,7 +660,6 @@ def DFSsolution(game):
                 newState.move(1, 0, False)
 
             newState.pathSol += step
-            # newState.heuristic +=1
 
             if newState.is_completed():
                 end = time.time()
@@ -669,75 +668,18 @@ def DFSsolution(game):
                 print("Number of visited node:", node_generated)
                 print("Solution:", newState.pathSol)
                 game.step = len(newState.pathSol)
-                game.time = round(end -start,2)
+                game.time = round(end - start, 2)
                 return newState.pathSol
-            
+
             if node_generated >= DEEPMAX:
                 print("Exceeded maximum depth!")
-                
 
-            if (newState.get_matrix() not in stateExplored) and (not is_deadlock(newState)) :
-                stateSet.put(newState)
+            if tuple(map(tuple, newState.get_matrix())) not in stateExplored and not is_deadlock(newState):
+                stateSet.append(newState)
 
     end = time.time()
     print("Time to find solution:", round(end - start, 2))
     print("Number of visited node:", node_generated)
-    print("No Solution!")
-    return "NoSol"
-
-def BFSsolution(game):
-    start = time.time()
-    node_generated = 0
-    state = copy.deepcopy(game) # Parent Node                 
-    node_generated += 1
-    if is_deadlock(state):
-        end = time.time()
-        print("Time to find solution:",round(end -start,2))
-        print("Number of visited node:",node_generated)
-        print("No Solution!")
-        return "NoSol"
-    stateSet = queue.Queue()    # Queue to store traversed nodes 
-    stateSet.put(state)
-    stateExplored = []          # list of visited node (store matrix of nodes)
-    print("Processing...")
-    '''Traverse until there is no available node (No Solution)'''
-    while not stateSet.empty():
-        if (time.time() - start) >= TIME_LIMITED:
-            print("Time Out!")
-            return "TimeOut"                    
-        currState = stateSet.get()                      # get the top node of the queue to be the current node
-        move = validMove(currState)                     # find next valid moves of current node in type of list of char ["U","D","L","R"]
-        stateExplored.append(currState.get_matrix())    # add matrix of current node to visited list
-        ''' For each valid move:
-                Generate child nodes by updating the current node with move
-                If the child node is not visited và not lead to deadlock (box on the corner), put it in queue of nodes
-                If the child node is the end node to win, return the path of it'''
-        for step in move:                               
-            newState = copy.deepcopy(currState)
-            node_generated += 1
-            if step == "U":
-                newState.move(0,-1,False)
-            elif step == "D":
-                newState.move(0,1,False)
-            elif step == "L":
-                newState.move(-1,0,False)
-            elif step == "R":
-                newState.move(1,0,False)
-            newState.pathSol += step
-        
-            if newState.is_completed():
-                end = time.time()
-                print("Time to find solution:",round(end -start,2),"seconds")
-                print("Number of visited node:",node_generated)
-                print("Solution:",newState.pathSol)
-                game.step = len(newState.pathSol)
-                return newState.pathSol
-
-            if (newState.get_matrix() not in stateExplored) and (not is_deadlock(newState)):
-                stateSet.put(newState)
-    end = time.time()
-    print("Time to find solution:",round(end -start,2))
-    print("Number of visited node:",node_generated)
     print("No Solution!")
     return "NoSol"
 
