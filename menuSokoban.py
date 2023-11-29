@@ -1,29 +1,31 @@
+import subprocess
+import sys
 import pygame
 import time
 pygame.init()
 
 class Button():
     def __init__(self, x, y, width, height, color, text, onclick):
-        self.x = x # The x coordinate of the button
-        self.y = y # The y coordinate of the button
-        self.width = width # The width of the button
-        self.height = height # The height of the button
-        self.color = color # The color of the button
-        self.text = text # The text on the button
-        self.onclick = onclick # The function to call when the button is clicked
-        self.surface = pygame.Surface((self.width, self.height)) # The surface of the button
-        self.rect = pygame.Rect(self.x, self.y, self.width, self.height) # The rectangle of the button
-        self.font = pygame.font.SysFont("Arial", 32) # The font of the text
-        self.text_surf = self.font.render(self.text, True, (0, 0, 0)) # The surface of the text
+        self.x = x 
+        self.y = y 
+        self.width = width 
+        self.height = height 
+        self.color = color 
+        self.text = text 
+        self.onclick = onclick 
+        self.surface = pygame.Surface((self.width, self.height)) 
+        self.rect = pygame.Rect(self.x, self.y, self.width, self.height) 
+        self.font = pygame.font.SysFont("Arial", 32) 
+        self.text_surf = self.font.render(self.text, True, (0, 0, 0)) 
     def draw(self, screen):
-        self.surface.fill(self.color) # Fill the surface with the color
+        self.surface.fill(self.color) 
         self.surface.blit(self.text_surf, (self.width // 2 - self.text_surf.get_width() // 2, self.height // 2 - self.text_surf.get_height() // 2)) # Blit the text on the center of the surface
-        screen.blit(self.surface, (self.x, self.y)) # Blit the surface on the screen at the position
+        screen.blit(self.surface, (self.x, self.y)) 
     def handle_event(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN: # If the event is pressing the mouse button
-            mouse_pos = pygame.mouse.get_pos() # Get the mouse position
-            if self.rect.collidepoint(mouse_pos): # If the mouse position is on the button
-                self.onclick() # Call the function
+        if event.type == pygame.MOUSEBUTTONDOWN: 
+            mouse_pos = pygame.mouse.get_pos() 
+            if self.rect.collidepoint(mouse_pos): 
+                self.onclick() 
                 
 screen = pygame.display.set_mode((1448, 758))
 pygame.display.set_caption("Sokoban")
@@ -39,7 +41,11 @@ def endMenu_game():
     print("End the game")
     running = False
 def multiplePlay_game():
-    print("AI VS HUMAN")
+    try:
+        subprocess.Popen(["python", "2vs2.py"])
+        sys.exit()
+    except Exception as e:
+        print(f"Error opening Menu.py: {e}")
 # Nut start game   
 start_time = None
 step_count = 0
@@ -72,11 +78,11 @@ def toggle_mode():
         print("Switched to Player Mode")
 #giao dien       
 def switch_interface():
-    global current_interface
-    if current_interface == "menu":
-        current_interface = "player"
-    else:
-        current_interface = "menu"
+    try:
+        subprocess.Popen(["python", "game.py"])
+        sys.exit()
+    except Exception as e:
+        print(f"Error opening Menu.py: {e}")
 #next level
 def next_level():
     print("Next level")
