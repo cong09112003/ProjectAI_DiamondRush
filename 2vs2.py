@@ -43,7 +43,7 @@ class Game:
         self.initial_matrix = copy.deepcopy(matrix)
         self.listMappath = ['map/game01.txt', 'map/game02.txt', 'map/game03.txt','map/game04.txt','map/game05.txt','map/game06.txt',
                             'map/game07.txt','map/game08.txt','map/game09.txt','map/game10.txt','map/game11.txt','map/game12.txt',
-                            'map/game13.txt','map/game14.txt','map/game15.txt']  
+                            'map/game13.txt','map/game14.txt','map/game15.txt','map/game16.txt','map/game17.txt']  
         self.curMappath = "map/game01.txt"
         self.state="..."
         self.step = 0    
@@ -582,29 +582,32 @@ def UCSsolution(game):
     return "NoSol"
 
 def IDSsolution(game):
-    TIME_LIMITED = 200  # Assuming a time limit of 60 seconds
+    DEEPMAX = 1000000
+    TIME_LIMITED = 300
 
     start = time.time()
     node_generated = 0
 
-    depth_limit = 1
-    while True:
-        result = depthLimitedDFS(game, depth_limit, start, node_generated, TIME_LIMITED)
-
+    for depth in range(1, DEEPMAX + 1,1):
+        result = DLS(game, depth, start, TIME_LIMITED, node_generated, DEEPMAX)
         if result == "TimeOut":
-            print("Time Out!")
             return "TimeOut"
-        elif result != "NoSol":
+        elif result == "NoSol":
+            continue
+        else:
             return result
 
-        depth_limit += 1
-def depthLimitedDFS(game, depth_limit, start, node_generated, time_limit):
+    print("Exceeded maximum depth!")
+    return "NoSol"
+
+def DLS(game, depth, start, time_limit, node_generated, DEEPMAX):
     state = copy.deepcopy(game)
     state.heuristic = 0
     node_generated += 1
-    stateSet = [state]  # Use a list as a stack
+
+    stateSet = [state]
     stateExplored = set()
-    print(f"Processing with depth limit {depth_limit}...")
+
     while stateSet:
         if (time.time() - start) >= time_limit:
             print("Time Out!")
@@ -614,8 +617,9 @@ def depthLimitedDFS(game, depth_limit, start, node_generated, time_limit):
         move = validMove(currState)
         stateExplored.add(tuple(map(tuple, currState.get_matrix())))
 
-        # if node_generated >= depth_limit:
-        #     print("Exceeded maximum depth!")
+        if node_generated >= DEEPMAX:
+            print("Exceeded maximum depth!")
+            return "NoSol"
 
         for step in move:
             newState = copy.deepcopy(currState)
@@ -636,17 +640,22 @@ def depthLimitedDFS(game, depth_limit, start, node_generated, time_limit):
                 print("IDS")
                 print("Time to find solution:", round(end - start, 2), "seconds")
                 print("Number of visited node:", node_generated)
+                print('Step:', len(newState.pathSol))
                 print("Solution:", newState.pathSol)
                 game.step = len(newState.pathSol)
                 game.time = round(end - start, 2)
                 return newState.pathSol
 
-            # if node_generated >= depth_limit:
-            #     print("Exceeded maximum depth!")
+            if node_generated >= DEEPMAX:
+                print("Exceeded maximum depth!")
+                return "NoSol"
 
-            if tuple(map(tuple, newState.get_matrix())) not in stateExplored and not is_deadlock(newState):
+            if tuple(map(tuple, newState.get_matrix())) not in stateExplored and not is_deadlock(newState) and len(newState.pathSol) <= depth:
                 stateSet.append(newState)
+
     return "NoSol"
+
+
 def DFSsolution(game):
     DEEPMAX = 1000000
     TIME_LIMITED = 60  
@@ -693,6 +702,7 @@ def DFSsolution(game):
                 print("DFS")
                 print("Time to find solution:", round(end - start, 2), "seconds")
                 print("Number of visited node:", node_generated)
+                print('Step:', len(newState.pathSol))
                 print("Solution:", newState.pathSol)
                 game.step = len(newState.pathSol)
                 game.time = round(end - start, 2)
@@ -896,7 +906,7 @@ def run_solution1(screen, game, sur):
         screen.blit(sur, (0, 0))
         pygame.display.flip()
         i += 1
-        time.sleep(0.1)
+        time.sleep(0.025)
 
 def run_solution2(screen, game2, sur2):
     i = 0
@@ -920,7 +930,7 @@ def run_solution2(screen, game2, sur2):
         screen.blit(sur2, (730, 0))
         pygame.display.flip()
         i += 1
-        time.sleep(0.1)
+        time.sleep(0.025)
 
 def testrun(screen, game, game2, sur, sur2):
     thread1 = threading.Thread(target=run_solution1, args=(screen, game, sur))
