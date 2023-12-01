@@ -404,7 +404,6 @@ def is_deadlock(state):
                 
     return False
 
-
 def get_distance(state):
     sum = 0
     box_list = state.box_list()
@@ -414,14 +413,6 @@ def get_distance(state):
             sum += (abs(dock[0] - box[0]) + abs(dock[1] - box[1]))
     return sum
 
-def worker_to_box(state):
-    p = 1000
-    worker = state.worker()
-    box_list = state.box_list()
-    for box in box_list:
-        if (abs(worker[0] - box[0]) + abs(worker[1] - box[1])) <= p:
-            p = abs(worker[0] - box[0]) + abs(worker[1] - box[1])
-    return p
 def map_open(filename):
     matrix = []
     try:
@@ -472,12 +463,23 @@ def print_game(matrix,screen):
             x = x + 32
         x = x_offset
         y = y + 32
+def h(state):
+    total_distance = 0
+    boxes = state.box_list()
+    docks = state.dock_list()
+
+    for box in boxes:
+        if docks:  
+            distance = min(abs(box[0] - dock[0]) + abs(box[1] - dock[1]) for dock in docks)
+            total_distance += distance
+        else:
+            total_distance += 0
+    return total_distance
 
 def AstarSolution(game):
     start = time.time()
     node_generated = 0
     state = copy.deepcopy(game) 
-    state.heuristc = worker_to_box(state) + get_distance(state)
     node_generated += 1
     if is_deadlock(state):
         end = time.time()
@@ -485,15 +487,15 @@ def AstarSolution(game):
         print("Number of visited node:",node_generated)
         print("No Solution!")
         return "NoSol"                 
-    stateSet = queue.PriorityQueue()    
-    stateSet.put(state)
+    stateSet = PriorityQueue()    
+    stateSet.put((0, state))  
     stateExplored = []                 
     print("Processing...")
     while not stateSet.empty():
         if (time.time() - start) >= TIME_LIMITED:
             print("Time Out!")
             return "TimeOut"                        
-        currState = stateSet.get()                      
+        _, currState = stateSet.get()                    
         move = validMove(currState)                     
         stateExplored.append(currState.get_matrix())    
         
@@ -509,19 +511,20 @@ def AstarSolution(game):
             elif step == "R":
                 newState.move(1,0,False)
             newState.pathSol += step
-            newState.heuristic = worker_to_box(newState) + get_distance(newState)
         
             if newState.is_completed():
                 end = time.time()
-                print("Time to find solution:",round(end -start,2),"seconds")
-                print("Number of visited node:",node_generated)
+                print("Time to find solution with A*:",round(end -start,2),"seconds")
+                print("Number of visited node with A*:",node_generated)
                 print("Solution:",newState.pathSol)
                 game.step = len(newState.pathSol)
                 game.time = round(end -start,2)
                 return newState.pathSol
 
             if (newState.get_matrix() not in stateExplored) and (not is_deadlock(newState)):
-                stateSet.put(newState)
+                cost = len(newState.pathSol) + h(newState)
+                stateSet.put((cost, newState))  
+                
     end = time.time()
     print("Time to find solution:",round(end -start,2))
     print("Number of visited node:",node_generated)

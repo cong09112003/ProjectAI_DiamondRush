@@ -1,4 +1,5 @@
 import sys
+import tkinter as tk
 import pygame
 import queue
 import copy
@@ -397,14 +398,6 @@ def get_distance(state):
             sum += (abs(dock[0] - box[0]) + abs(dock[1] - box[1]))
     return sum
 
-def worker_to_box(state):
-    p = 1000
-    worker = state.worker()
-    box_list = state.box_list()
-    for box in box_list:
-        if (abs(worker[0] - box[0]) + abs(worker[1] - box[1])) <= p:
-            p = abs(worker[0] - box[0]) + abs(worker[1] - box[1])
-    return p
 def map_open(filename):
     matrix = []
     try:
@@ -455,8 +448,7 @@ def print_game(matrix,screen):
             x = x + 32
         x = x_offset
         y = y + 32
-
-def heuristic(state):
+def h(state):
     total_distance = 0
     boxes = state.box_list()
     docks = state.dock_list()
@@ -468,7 +460,6 @@ def heuristic(state):
         else:
             total_distance += 0
     return total_distance
-
 def AstarSolution(game):
     start = time.time()
     node_generated = 0
@@ -515,7 +506,7 @@ def AstarSolution(game):
                 return newState.pathSol
 
             if (newState.get_matrix() not in stateExplored) and (not is_deadlock(newState)):
-                cost = len(newState.pathSol) + heuristic(newState)
+                cost = len(newState.pathSol) + h(newState)
                 stateSet.put((cost, newState))  
                 
     end = time.time()
@@ -570,7 +561,7 @@ def UCSsolution(game):
                 return newState.pathSol
 
             if (newState.get_matrix() not in stateExplored) and (not is_deadlock(newState)):
-                stateSet.put((len(newState.pathSol), newState))  # Add the cost to the queue
+                stateSet.put((len(newState.pathSol), newState))  
     end = time.time()
     print("Time to find solution:",round(end -start,2))
     print("Number of visited node:",node_generated)
@@ -851,7 +842,7 @@ def a(screen,game,game_surface):
         print_game(game.get_matrix(),pygame.display.get_surface())
         pygame.display.flip()
         screen.blit(game_surface, (0, 0))
-        time.sleep(0.025)    
+        time.sleep(0.01)    
 
 def ucs(game):
     sol = UCSsolution(game)
@@ -859,7 +850,7 @@ def ucs(game):
         playByBot(game,move)
         print_game(game.get_matrix(),pygame.display.get_surface())
         pygame.display.flip()
-        time.sleep(0.025)
+        time.sleep(0.01)
 
 def dfs(game):
     i=0
@@ -869,7 +860,7 @@ def dfs(game):
         print_game(game.get_matrix(),pygame.display.get_surface())
         pygame.display.flip()
         i+=1
-        time.sleep(0.025)
+        time.sleep(0.01)
 def ids(game):
     i=0
     sol= IDSsolution(game)
@@ -878,7 +869,7 @@ def ids(game):
         print_game(game.get_matrix(),pygame.display.get_surface())
         pygame.display.flip()
         i+=1
-        time.sleep(0.025)
+        time.sleep(0.01)
 
 def bfs(game):
     i=0
@@ -888,7 +879,7 @@ def bfs(game):
         print_game(game.get_matrix(),pygame.display.get_surface())
         pygame.display.flip()
         i+=1
-        time.sleep(0.025)
+        time.sleep(0.01)
 def greedy(game):
     i=0
     sol= GreedySolution(game)
@@ -897,7 +888,43 @@ def greedy(game):
         print_game(game.get_matrix(),pygame.display.get_surface())
         pygame.display.flip()
         i+=1
-        time.sleep(0.025)
+        time.sleep(0.01)
+
+def display_history(level):
+    history_file_path = f'history/{level}.txt'
+
+    try:
+        with open(history_file_path, 'r') as file:
+            history_content = file.read()
+
+            window = tk.Tk()
+
+            window.geometry("1100x400")  
+
+            algorithm_sections = history_content.split('\n\n')
+
+            level_frame = tk.Frame(window)
+            level_label = tk.Label(level_frame, text=f"Level: {level}", font=("Courier", 16, "bold"))
+            level_label.pack()
+
+            separator_line = tk.Label(window, text="------------------------", font=("Courier", 12))
+            separator_line.grid(row=1, column=0, columnspan=3)
+
+            for i, section in enumerate(algorithm_sections):
+                algorithm_label = tk.Label(window, text=section, justify=tk.LEFT, font=("Courier", 14))
+                algorithm_label.grid(row=(i // 3) + 2, column=i % 3)
+
+            level_frame.grid(row=0, column=0, columnspan=3)
+
+            # Increase spacing between columns
+            for i in range(3):
+                window.columnconfigure(i, weight=10)
+
+            window.mainloop()
+
+    except FileNotFoundError:
+        print(f"History file not found for level {level}")
+
 
 def main():
     game = Game(map_open('map/game01.txt'))
@@ -938,7 +965,7 @@ def main():
     button_previouslevel = Button(screen,  750,  350,  100,  40, text='Previous',  fontSize=34,  margin=20,  
                                   inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: load_previous_map(game,game_surface) )
     button_History = Button(screen,  815,  250,  100,  40, text='History',  fontSize=34,  margin=20, 
-                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: home() )
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: display_history(game.current_level) )
     button_Home = Button(screen,  815,  300,  100,  40, text='Home',  fontSize=34,  margin=20, 
                           inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: home() )
 
