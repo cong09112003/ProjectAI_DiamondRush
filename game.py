@@ -44,10 +44,10 @@ class Game:
                             'map/game07.txt','map/game08.txt','map/game09.txt','map/game10.txt','map/game11.txt','map/game12.txt',
                             'map/game13.txt','map/game14.txt','map/game15.txt','map/game16.txt','map/game17.txt'] 
         self.curMappath = "map/game01.txt"
-        self.curMappath = "map/game01.txt"
         self.state="..."
         self.step = 0    
         self.time = 0
+        self.current_level = 1  
     
     def load_next_map(self,gamesur):
         gamesur.fill((41,41,41))
@@ -252,6 +252,10 @@ class Game:
         print_game(self.get_matrix(), pygame.display.get_surface())
 
 def load_next_map(game, gamesur):
+    if (game.current_level == (len(game.listMappath))):
+        game.current_level = len(game.listMappath)
+    else:
+        game.current_level += 1
     game.heuristic = 0
     game.heuristic = 0
     game.pathSol = ""
@@ -267,6 +271,10 @@ def load_next_map(game, gamesur):
         print_game(game.get_matrix(), gamesur)
 
 def load_previous_map(game, gamesur):
+    if game.current_level == 1:
+        game.current_level =1
+    else:
+        game.current_level -= 1
     game.heuristic = 0
     game.heuristic = 0
     game.pathSol = ""
@@ -448,11 +456,23 @@ def print_game(matrix,screen):
         x = x_offset
         y = y + 32
 
+def heuristic(state):
+    total_distance = 0
+    boxes = state.box_list()
+    docks = state.dock_list()
+
+    for box in boxes:
+        if docks:  
+            distance = min(abs(box[0] - dock[0]) + abs(box[1] - dock[1]) for dock in docks)
+            total_distance += distance
+        else:
+            total_distance += 0
+    return total_distance
+
 def AstarSolution(game):
     start = time.time()
     node_generated = 0
     state = copy.deepcopy(game) 
-    state.heuristc = worker_to_box(state) + get_distance(state)
     node_generated += 1
     if is_deadlock(state):
         end = time.time()
@@ -460,15 +480,15 @@ def AstarSolution(game):
         print("Number of visited node:",node_generated)
         print("No Solution!")
         return "NoSol"                 
-    stateSet = queue.PriorityQueue()    
-    stateSet.put(state)
+    stateSet = PriorityQueue()    
+    stateSet.put((0, state))  
     stateExplored = []                 
     print("Processing...")
     while not stateSet.empty():
         if (time.time() - start) >= TIME_LIMITED:
             print("Time Out!")
             return "TimeOut"                        
-        currState = stateSet.get()                      
+        _, currState = stateSet.get()                    
         move = validMove(currState)                     
         stateExplored.append(currState.get_matrix())    
         
@@ -484,7 +504,6 @@ def AstarSolution(game):
             elif step == "R":
                 newState.move(1,0,False)
             newState.pathSol += step
-            newState.heuristic = worker_to_box(newState) + get_distance(newState)
         
             if newState.is_completed():
                 end = time.time()
@@ -496,7 +515,9 @@ def AstarSolution(game):
                 return newState.pathSol
 
             if (newState.get_matrix() not in stateExplored) and (not is_deadlock(newState)):
-                stateSet.put(newState)
+                cost = len(newState.pathSol) + heuristic(newState)
+                stateSet.put((cost, newState))  
+                
     end = time.time()
     print("Time to find solution:",round(end -start,2))
     print("Number of visited node:",node_generated)
@@ -916,6 +937,8 @@ def main():
                                inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: load_next_map(game,game_surface) )
     button_previouslevel = Button(screen,  750,  350,  100,  40, text='Previous',  fontSize=34,  margin=20,  
                                   inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: load_previous_map(game,game_surface) )
+    button_History = Button(screen,  815,  250,  100,  40, text='History',  fontSize=34,  margin=20, 
+                          inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: home() )
     button_Home = Button(screen,  815,  300,  100,  40, text='Home',  fontSize=34,  margin=20, 
                           inactiveColour=(200, 50, 0), hoverColour=(150, 0, 0), pressedColour=(0, 200, 20),  onClick=lambda: home() )
 
@@ -953,11 +976,13 @@ def main():
         steps_label = font.render(f"Steps: {game.step}", True, (255, 255, 255))
         time_label = font.render(f"Time: {game.time}s", True, (255, 255, 255))
 
+        lavel_label = font.render(f"Level: {game.current_level}", True, (255, 255,255))
         
         state_label=font.render(f"State: {game.state}", True, (255, 255, 255))
         screen.blit(steps_label, (80, game_surface.get_height() + 10))
         screen.blit(time_label, (260, game_surface.get_height() + 10))
-        screen.blit(state_label, (500, game_surface.get_height() + 10))
+        screen.blit(state_label, (520, game_surface.get_height() + 10))
+        screen.blit(lavel_label,(400, game_surface.get_height() + 10))
         screen.blit(game_surface, (0, 0))
 
         pygame.display.flip()
