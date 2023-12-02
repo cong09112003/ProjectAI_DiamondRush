@@ -9,14 +9,14 @@ Time to find solution: 1.19
 Nodes: 16318
 
         IDS
-Step: 
-Time to find solution: TIMEOUT
-Nodes: 
+Step: 207
+Time to find solution: 281.81
+Nodes: 16802
 
         UCS
-Step: 
-Time to find solution: TIMEOUT
-Nodes: 
+Step: 99
+Time to find solution: 314.88
+Nodes: 76038
 
         A*
 Step: 99
